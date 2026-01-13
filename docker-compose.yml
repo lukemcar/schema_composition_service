@@ -1,0 +1,131 @@
+version: "3.8"
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: my_entity_db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    ports:
+      - "15432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      - ./docker/postgres/init-database.sql:/docker-entrypoint-initdb.d/init-database.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  rabbitmq:
+    image: rabbitmq:4.2.1-management-alpine
+    container_name: my_entity_rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: my_entity
+      RABBITMQ_DEFAULT_PASS: my_entity
+      RABBITMQ_DEFAULT_VHOST: my_entity
+    ports:
+      - "5672:5672"     # AMQP
+      - "15672:15672"   # Management UI
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD-SHELL", "rabbitmq-diagnostics -q ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.97.0
+    container_name: otel_collector
+    command: ["--config=/etc/otel-collector-config.yml"]
+    volumes:
+      - ./docker/otel/otel-collector-config.yml:/etc/otel-collector-config.yml:ro
+    ports:
+      - "14318:4318"   # OTLP HTTP receiver
+      - "14317:4317"   # OTLP gRPC receiver (optional)
+    depends_on:
+      jaeger:
+        condition: service_started
+    restart: unless-stopped
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.54
+    container_name: jaeger
+    # Enable Jaeger's OTLP receiver so the OpenTelemetry collector can export
+    # spans using the OTLP exporter instead of the deprecated Jaeger exporter.
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+    ports:
+      - "16686:16686"  # Jaeger UI
+      # OTLP gRPC receiver; used by the collector to send traces
+      - "24317:4317"
+      # OTLP HTTP receiver; not strictly required but exposed for completeness
+      - "24318:4318"
+    restart: unless-stopped
+
+  my-entity-service:
+    build:
+      context: .
+      dockerfile: docker/api/Dockerfile
+    container_name: my_entity_service_app
+    environment:
+      DATABASE_URL: postgresql+psycopg2://my_entity_app:my_entity_app_password@db:5432/my_entity_service
+      LIQUIBASE_ENABLED: "true"
+      LIQUIBASE_PROPERTY_FILE: "migrations/liquibase/docker-liquibase.properties"
+
+      # Message broker wiring
+      CELERY_BROKER_URL: amqp://my_entity:my_entity@rabbitmq:5672/my_entity
+      CELERY_RESULT_BACKEND: rpc://
+
+      # OpenTelemetry exporter -> collector
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+      OTEL_EXPORTER_OTLP_PROTOCOL: http/protobuf
+      OTEL_SERVICE_NAME: my-entity-service
+      OTEL_TRACES_EXPORTER: otlp
+    ports:
+      - "8080:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      otel-collector:
+        condition: service_started
+    restart: unless-stopped
+
+  my-entity-worker:
+    build:
+      context: .
+      dockerfile: docker/worker/Dockerfile
+    container_name: my_entity_worker
+    environment:
+      DATABASE_URL: postgresql+psycopg2://my_entity_app:my_entity_app_password@db:5432/my_entity_service
+      CELERY_BROKER_URL: amqp://my_entity:my_entity@rabbitmq:5672/my_entity
+      CELERY_RESULT_BACKEND: rpc://
+
+      # OpenTelemetry exporter -> collector
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+      OTEL_EXPORTER_OTLP_PROTOCOL: http/protobuf
+      OTEL_SERVICE_NAME: my-entity-worker
+      OTEL_TRACES_EXPORTER: otlp
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      db:
+        condition: service_healthy
+      otel-collector:
+        condition: service_started
+    restart: unless-stopped
+
+  # Remove webhook-dump service from the template to keep the stack minimal.
+
+volumes:
+  db_data:
+    driver: local
+  rabbitmq_data:
+    driver: local

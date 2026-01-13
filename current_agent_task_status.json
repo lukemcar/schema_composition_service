@@ -1,0 +1,86 @@
+{
+  "tasks": [
+    {
+      "domain": "MyEntity",
+      "status": "provided by starter",
+      "iteration": 0
+    },
+    {
+      "domain": "FieldDataTypeEnum",
+      "status": "completed",
+      "iteration": 1
+    },
+    {
+      "domain": "FieldElementTypeEnum",
+      "status": "completed",
+      "iteration": 1
+    },
+    {
+      "domain": "ArtifactSourceTypeEnum",
+      "status": "completed",
+      "iteration": 1
+    },
+    {
+      "domain": "FormCatalogCategory",
+      "status": "completed",
+      "iteration": 1
+    },
+    {
+      "domain": "FieldDef",
+      "status": "completed",
+      "iteration": 2
+    },
+    {
+      "domain": "FieldDefOption",
+      "status": "completed",
+      "iteration": 4
+    },
+    {
+      "domain": "Component",
+      "status": "completed",
+      "iteration": 4
+    },
+    {
+      "domain": "ComponentPanel",
+      "status": "completed",
+      "iteration": 4
+    },
+    {
+      "domain": "ComponentPanelField",
+      "status": "completed",
+      "iteration": 4
+    },
+    {
+      "domain": "Form",
+      "status": "completed",
+      "iteration": 4
+    },
+    {
+      "domain": "FormPanel",
+      "status": "completed",
+      "iteration": 4
+    },
+    {
+      "domain": "FormPanelComponent",
+      "status": "completed",
+      "iteration": 4
+    },
+    {
+      "domain": "FormPanelField",
+      "status": "completed",
+      "iteration": 4
+    },
+    {
+      "domain": "FormSubmission",
+      "status": "completed",
+      "iteration": 4
+    },
+    {
+      "domain": "FormSubmissionValue",
+      "status": "completed",
+      "iteration": 4
+    }
+  ],
+  "last_completed_iteration": 4
+  "last_completed_iteration": 5
+}
