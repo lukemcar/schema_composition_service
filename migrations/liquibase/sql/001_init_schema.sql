@@ -3071,7 +3071,110 @@ ON schema_composition.form_submission_value
 FOR EACH ROW
 EXECUTE FUNCTION schema_composition.tg_set_form_submission_value_search_text();
 
--- END original form_schema.sql
+-- ----------------------------------------------------------------------
+-- Table: schema_composition.form_submission_archive
+-- ----------------------------------------------------------------------
+-- PURPOSE
+--   Cold-storage archive for form submissions that are no longer active.
+--
+--   Rows are moved here from schema_composition.form_submission as part of
+--   a data retention policy (e.g., 6 months after final submission).
+--
+--   Archive tables are NOT part of the operational hot path:
+--     - no workflow processing
+--     - no frequent updates
+--     - no default API queries
+--
+--   They exist to support:
+--     - audit and compliance
+--     - historical lookup
+--     - long-term retention
+--     - downstream reconciliation
+-- ----------------------------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS schema_composition.form_submission_archive (
+    id UUID PRIMARY KEY,
+
+    tenant_id UUID NOT NULL,
+    form_id UUID NOT NULL,
+
+    is_submitted BOOLEAN NOT NULL,
+    submitted_at TIMESTAMPTZ,
+    submission_version INTEGER NOT NULL,
+
+    is_archived BOOLEAN NOT NULL,
+    archived_at TIMESTAMPTZ,
+
+    created_at TIMESTAMPTZ NOT NULL,
+    updated_at TIMESTAMPTZ NOT NULL,
+
+    created_by VARCHAR(100),
+    updated_by VARCHAR(100),
+
+    -- Timestamp when the row was physically archived
+    archived_moved_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Minimal indexes for archive access
+CREATE INDEX IF NOT EXISTS ix_form_submission_archive_tenant
+    ON schema_composition.form_submission_archive (tenant_id);
+
+CREATE INDEX IF NOT EXISTS ix_form_submission_archive_tenant_form
+    ON schema_composition.form_submission_archive (tenant_id, form_id);
+
+COMMENT ON TABLE schema_composition.form_submission_archive IS
+'Archive table for form submissions that have exited the active lifecycle. Contains historically immutable submission envelopes retained for audit, compliance, and long-term reference. Data is moved here from schema_composition.form_submission according to retention policy.';
+
+
+-- ----------------------------------------------------------------------
+-- Table: schema_composition.form_submission_value_archive
+-- ----------------------------------------------------------------------
+-- PURPOSE
+--   Cold-storage archive for captured submission values.
+--
+--   Each row corresponds to a field instance value that belonged to a
+--   form submission at the time it was archived.
+--
+--   This table mirrors schema_composition.form_submission_value structurally,
+--   but excludes operational helpers such as triggers and search indexes.
+-- ----------------------------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS schema_composition.form_submission_value_archive (
+    id UUID PRIMARY KEY,
+
+    tenant_id UUID NOT NULL,
+    form_submission_id UUID NOT NULL,
+    field_def_id UUID NOT NULL,
+
+    field_path VARCHAR(800) NOT NULL,
+
+    form_panel_field_id UUID,
+    form_panel_component_id UUID,
+    component_panel_field_id UUID,
+
+    value JSONB,
+    value_search_text TEXT,
+
+    created_at TIMESTAMPTZ NOT NULL,
+    updated_at TIMESTAMPTZ NOT NULL,
+
+    created_by VARCHAR(100),
+    updated_by VARCHAR(100),
+
+    -- Timestamp when the row was physically archived
+    archived_moved_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Minimal indexes for archive access
+CREATE INDEX IF NOT EXISTS ix_form_submission_value_archive_tenant
+    ON schema_composition.form_submission_value_archive (tenant_id);
+
+CREATE INDEX IF NOT EXISTS ix_form_submission_value_archive_submission
+    ON schema_composition.form_submission_value_archive (tenant_id, form_submission_id);
+
+COMMENT ON TABLE schema_composition.form_submission_value_archive IS
+'Archive table for captured field values belonging to archived form submissions. Mirrors schema_composition.form_submission_value but is optimized for cold storage, audit, and historical reference rather than active querying.';
+
 
 -- ======================================================================
 -- PHASE 2: Marketplace-grade additions
