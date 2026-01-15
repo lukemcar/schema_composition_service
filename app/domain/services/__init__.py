@@ -8,13 +8,6 @@ functions in ``__all__`` so they are discoverable via
 """
 
 from .health_service import get_liveness, get_readiness  # noqa: F401
-from .my_entity_service import (
-    create_my_entity,
-    get_my_entity,
-    list_my_entities,
-    update_my_entity,
-    delete_my_entity,
-)  # noqa: F401
 
 # Import FormCatalogCategory service functions
 from .form_catalog_category_service import (
@@ -127,11 +120,6 @@ from .form_submission_value_service import (
 __all__ = [
     "get_liveness",
     "get_readiness",
-    "create_my_entity",
-    "get_my_entity",
-    "list_my_entities",
-    "update_my_entity",
-    "delete_my_entity",
 
     # FormCatalogCategory
     "create_form_catalog_category",

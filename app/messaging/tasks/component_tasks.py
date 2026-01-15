@@ -30,7 +30,7 @@ def _parse_envelope(*, envelope: Dict[str, Any] | None, payload: Dict[str, Any] 
             "event_type": task_name,
             "schema_version": 1,
             "occurred_at": datetime.utcnow(),
-            "producer": "my-entity-service",
+            "producer": "schema-composition-service",
             "tenant_id": tenant_id,
             "correlation_id": None,
             "causation_id": None,
@@ -56,7 +56,7 @@ def _propagate_trace(event: EventEnvelope) -> None:
 
 
 @celery_app.task(
-    name="conversa.component.created",
+    name="SchemaComposition.component.created",
     autoretry_for=(Exception,),
     retry_backoff=True,
     retry_jitter=True,
@@ -64,7 +64,7 @@ def _propagate_trace(event: EventEnvelope) -> None:
     acks_late=True,
 )
 def handle_component_created(*, envelope: Dict[str, Any] | None = None, payload: Dict[str, Any] | None = None) -> None:
-    event = _parse_envelope(envelope=envelope, payload=payload, task_name="conversa.component.created")
+    event = _parse_envelope(envelope=envelope, payload=payload, task_name="SchemaComposition.component.created")
     _propagate_trace(event)
     message = ComponentCreatedMessage.model_validate(event.data)
     logger.info(
@@ -79,7 +79,7 @@ def handle_component_created(*, envelope: Dict[str, Any] | None = None, payload:
 
 
 @celery_app.task(
-    name="conversa.component.updated",
+    name="SchemaComposition.component.updated",
     autoretry_for=(Exception,),
     retry_backoff=True,
     retry_jitter=True,
@@ -87,7 +87,7 @@ def handle_component_created(*, envelope: Dict[str, Any] | None = None, payload:
     acks_late=True,
 )
 def handle_component_updated(*, envelope: Dict[str, Any] | None = None, payload: Dict[str, Any] | None = None) -> None:
-    event = _parse_envelope(envelope=envelope, payload=payload, task_name="conversa.component.updated")
+    event = _parse_envelope(envelope=envelope, payload=payload, task_name="SchemaComposition.component.updated")
     _propagate_trace(event)
     message = ComponentUpdatedMessage.model_validate(event.data)
     logger.info(
@@ -103,7 +103,7 @@ def handle_component_updated(*, envelope: Dict[str, Any] | None = None, payload:
 
 
 @celery_app.task(
-    name="conversa.component.deleted",
+    name="SchemaComposition.component.deleted",
     autoretry_for=(Exception,),
     retry_backoff=True,
     retry_jitter=True,
@@ -111,7 +111,7 @@ def handle_component_updated(*, envelope: Dict[str, Any] | None = None, payload:
     acks_late=True,
 )
 def handle_component_deleted(*, envelope: Dict[str, Any] | None = None, payload: Dict[str, Any] | None = None) -> None:
-    event = _parse_envelope(envelope=envelope, payload=payload, task_name="conversa.component.deleted")
+    event = _parse_envelope(envelope=envelope, payload=payload, task_name="SchemaComposition.component.deleted")
     _propagate_trace(event)
     message = ComponentDeletedMessage.model_validate(event.data)
     logger.info(

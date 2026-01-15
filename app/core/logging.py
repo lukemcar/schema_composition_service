@@ -1,7 +1,7 @@
 """
-Centralised JSON logging for the Dyno Conversa microservice.
+Centralised JSON logging for the SchemaComposition microservice.
 
-This module configures Python’s :mod:`logging` module to emit
+This module configures Python's :mod:`logging` module to emit
 structured JSON log lines enriched with OpenTelemetry trace context.  The
 configuration is applied once on application and worker startup via
 the :func:`configure_logging` function.  A legacy wrapper
@@ -124,7 +124,7 @@ def configure_logging() -> logging.Logger:
         root_logger.addHandler(handler)
         root_logger.setLevel(level)
     # Return a dedicated application logger
-    return logging.getLogger("conversa")
+    return logging.getLogger("SchemaComposition")
 
 
 # Backwards compatibility

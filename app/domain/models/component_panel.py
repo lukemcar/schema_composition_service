@@ -18,6 +18,10 @@ class ComponentPanel(Base):
     """Database model for component panels."""
 
     __tablename__ = "component_panel"
+    
+    __table_args__ = (
+        {"schema": "schema_composition"},
+    )
 
     component_panel_id: uuid.UUID = Column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, nullable=False

@@ -101,7 +101,7 @@ pattern established for `FormCatalogCategory` and `FieldDef`:
   panel.  Schemas capture the parent panel ID, field definition ID,
   override configuration, ordering, required flag and audit fields.
 * **Form** – Defines top‑level form definitions.  Schemas mirror the
-  model’s business keys, name, description, category reference,
+  model's business keys, name, description, category reference,
   configuration JSON and flags.  Output models include UUIDs and
   timestamps.
 * **FormPanel** – Models panels within a form.  Schemas contain the

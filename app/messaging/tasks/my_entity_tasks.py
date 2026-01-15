@@ -1,7 +1,7 @@
 """
-Celery tasks for MyEntity domain events.
+Celery tasks for SchemaComposition domain events.
 
-This module defines asynchronous handlers for MyEntity events published
+This module defines asynchronous handlers for SchemaComposition events published
 by the API layer.  Each handler accepts either a fully populated
 ``EventEnvelope`` or a legacy ``payload`` dictionary and logs the
 event details.  In a real system you might perform additional
@@ -21,7 +21,7 @@ from uuid import uuid4
 from app.core.celery_app import celery_app
 from app.core.db import get_cm_db  # optional if you need DB access in tasks
 from app.domain.schemas.events.common import EventEnvelope
-from app.domain.schemas.events.my_entity_events import (
+from app.domain.schemas.events.schema_composition_events import (
     MyEntityCreatedMessage,
     MyEntityUpdatedMessage,
     MyEntityDeletedMessage,
@@ -54,7 +54,7 @@ def _parse_envelope(*, envelope: Dict[str, Any] | None, payload: Dict[str, Any] 
             "event_type": task_name,
             "schema_version": 1,
             "occurred_at": datetime.utcnow(),
-            "producer": "my-entity-service",
+            "producer": "schema-composition-service",
             "tenant_id": tenant_id,
             "correlation_id": None,
             "causation_id": None,
@@ -96,28 +96,28 @@ def _propagate_trace(event: EventEnvelope) -> None:
 
 
 @celery_app.task(
-    name="conversa.my-entity.created",
+    name="SchemaComposition.schema-composition.created",
     autoretry_for=(Exception,),
     retry_backoff=True,
     retry_jitter=True,
     max_retries=3,
     acks_late=True,
 )
-def handle_my_entity_created(*, envelope: Dict[str, Any] | None = None, payload: Dict[str, Any] | None = None) -> None:
-    """Handle a newly created MyEntity event.
+def handle_schema_composition_created(*, envelope: Dict[str, Any] | None = None, payload: Dict[str, Any] | None = None) -> None:
+    """Handle a newly created SchemaComposition event.
 
     Logs the event details.  In a real application you could update
     derived read models or trigger downstream workflows here.
     """
-    event = _parse_envelope(envelope=envelope, payload=payload, task_name="conversa.my-entity.created")
+    event = _parse_envelope(envelope=envelope, payload=payload, task_name="SchemaComposition.schema-composition.created")
     _propagate_trace(event)
     # Validate domain payload
     message = MyEntityCreatedMessage.model_validate(event.data)
     logger.info(
-        "MyEntity created",
+        "SchemaComposition created",
         extra={
             "tenant_id": str(message.tenant_id),
-            "my_entity_id": str(message.my_entity_id),
+            "schema_composition_id": str(message.schema_composition_id),
             "message_id": str(event.event_id),
             "correlation_id": str(event.correlation_id) if event.correlation_id else None,
         },
@@ -127,23 +127,23 @@ def handle_my_entity_created(*, envelope: Dict[str, Any] | None = None, payload:
 
 
 @celery_app.task(
-    name="conversa.my-entity.updated",
+    name="SchemaComposition.schema-composition.updated",
     autoretry_for=(Exception,),
     retry_backoff=True,
     retry_jitter=True,
     max_retries=3,
     acks_late=True,
 )
-def handle_my_entity_updated(*, envelope: Dict[str, Any] | None = None, payload: Dict[str, Any] | None = None) -> None:
-    """Handle an updated MyEntity event."""
-    event = _parse_envelope(envelope=envelope, payload=payload, task_name="conversa.my-entity.updated")
+def handle_schema_composition_updated(*, envelope: Dict[str, Any] | None = None, payload: Dict[str, Any] | None = None) -> None:
+    """Handle an updated SchemaComposition event."""
+    event = _parse_envelope(envelope=envelope, payload=payload, task_name="SchemaComposition.schema-composition.updated")
     _propagate_trace(event)
     message = MyEntityUpdatedMessage.model_validate(event.data)
     logger.info(
-        "MyEntity updated",
+        "SchemaComposition updated",
         extra={
             "tenant_id": str(message.tenant_id),
-            "my_entity_id": str(message.my_entity_id),
+            "schema_composition_id": str(message.schema_composition_id),
             "changed_fields": list(message.changes.keys()),
             "message_id": str(event.event_id),
             "correlation_id": str(event.correlation_id) if event.correlation_id else None,
@@ -152,23 +152,23 @@ def handle_my_entity_updated(*, envelope: Dict[str, Any] | None = None, payload:
 
 
 @celery_app.task(
-    name="conversa.my-entity.deleted",
+    name="SchemaComposition.schema-composition.deleted",
     autoretry_for=(Exception,),
     retry_backoff=True,
     retry_jitter=True,
     max_retries=3,
     acks_late=True,
 )
-def handle_my_entity_deleted(*, envelope: Dict[str, Any] | None = None, payload: Dict[str, Any] | None = None) -> None:
-    """Handle a deleted MyEntity event."""
-    event = _parse_envelope(envelope=envelope, payload=payload, task_name="conversa.my-entity.deleted")
+def handle_schema_composition_deleted(*, envelope: Dict[str, Any] | None = None, payload: Dict[str, Any] | None = None) -> None:
+    """Handle a deleted SchemaComposition event."""
+    event = _parse_envelope(envelope=envelope, payload=payload, task_name="SchemaComposition.schema-composition.deleted")
     _propagate_trace(event)
     message = MyEntityDeletedMessage.model_validate(event.data)
     logger.info(
-        "MyEntity deleted",
+        "SchemaComposition deleted",
         extra={
             "tenant_id": str(message.tenant_id),
-            "my_entity_id": str(message.my_entity_id),
+            "schema_composition_id": str(message.schema_composition_id),
             "deleted_dt": message.deleted_dt,
             "message_id": str(event.event_id),
             "correlation_id": str(event.correlation_id) if event.correlation_id else None,

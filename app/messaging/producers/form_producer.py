@@ -36,7 +36,7 @@ class FormProducer:
         )
         envelope = EventEnvelope.create(message.model_dump(mode="json"), FormCreatedMessage)
         celery_app.send_task(
-            "conversa.form.created",
+            "SchemaComposition.form.created",
             args=[envelope.model_dump(mode="json")],
             headers=FormProducer._build_headers(),
         )
@@ -53,7 +53,7 @@ class FormProducer:
         )
         envelope = EventEnvelope.create(message.model_dump(mode="json"), FormUpdatedMessage)
         celery_app.send_task(
-            "conversa.form.updated",
+            "SchemaComposition.form.updated",
             args=[envelope.model_dump(mode="json")],
             headers=FormProducer._build_headers(),
         )
@@ -66,7 +66,7 @@ class FormProducer:
         )
         envelope = EventEnvelope.create(message.model_dump(mode="json"), FormDeletedMessage)
         celery_app.send_task(
-            "conversa.form.deleted",
+            "SchemaComposition.form.deleted",
             args=[envelope.model_dump(mode="json")],
             headers=FormProducer._build_headers(),
         )

@@ -12,13 +12,13 @@
         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.0.xsd">
 
     <!--
-    Root Liquibase changelog for the MyEntity service.
+    Root Liquibase changelog for the SchemaComposition service.
 
     This file includes all SQL change sets located under the
     ``migrations/liquibase/sql`` directory.  When adding new
     migrations, create a new numbered SQL file in that directory and
     Liquibase will automatically pick it up via the ``includeAll``
-    directive below.  Number files sequentially (e.g. 001_create_my_entity.sql,
+    directive below.  Number files sequentially (e.g. 001_create_schema_composition.sql,
     002_add_some_index.sql) to preserve ordering.
     -->
 

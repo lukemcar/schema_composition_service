@@ -52,7 +52,7 @@ def _parse_envelope(*, envelope: Dict[str, Any] | None, payload: Dict[str, Any] 
             "event_type": task_name,
             "schema_version": 1,
             "occurred_at": datetime.utcnow(),
-            "producer": "my-entity-service",
+            "producer": "schema-composition-service",
             "tenant_id": tenant_id,
             "correlation_id": None,
             "causation_id": None,
@@ -82,7 +82,7 @@ def _propagate_trace(event: EventEnvelope) -> None:
 
 
 @celery_app.task(
-    name="conversa.field-def.created",
+    name="SchemaComposition.field-def.created",
     autoretry_for=(Exception,),
     retry_backoff=True,
     retry_jitter=True,
@@ -95,7 +95,7 @@ def handle_field_def_created(*, envelope: Dict[str, Any] | None = None, payload:
     Logs the event details.  In a real application you could update
     derived read models or trigger downstream workflows here.
     """
-    event = _parse_envelope(envelope=envelope, payload=payload, task_name="conversa.field-def.created")
+    event = _parse_envelope(envelope=envelope, payload=payload, task_name="SchemaComposition.field-def.created")
     _propagate_trace(event)
     # Validate domain payload
     message = FieldDefCreatedMessage.model_validate(event.data)
@@ -111,7 +111,7 @@ def handle_field_def_created(*, envelope: Dict[str, Any] | None = None, payload:
 
 
 @celery_app.task(
-    name="conversa.field-def.updated",
+    name="SchemaComposition.field-def.updated",
     autoretry_for=(Exception,),
     retry_backoff=True,
     retry_jitter=True,
@@ -120,7 +120,7 @@ def handle_field_def_created(*, envelope: Dict[str, Any] | None = None, payload:
 )
 def handle_field_def_updated(*, envelope: Dict[str, Any] | None = None, payload: Dict[str, Any] | None = None) -> None:
     """Handle an updated FieldDef event."""
-    event = _parse_envelope(envelope=envelope, payload=payload, task_name="conversa.field-def.updated")
+    event = _parse_envelope(envelope=envelope, payload=payload, task_name="SchemaComposition.field-def.updated")
     _propagate_trace(event)
     message = FieldDefUpdatedMessage.model_validate(event.data)
     logger.info(
@@ -136,7 +136,7 @@ def handle_field_def_updated(*, envelope: Dict[str, Any] | None = None, payload:
 
 
 @celery_app.task(
-    name="conversa.field-def.deleted",
+    name="SchemaComposition.field-def.deleted",
     autoretry_for=(Exception,),
     retry_backoff=True,
     retry_jitter=True,
@@ -145,7 +145,7 @@ def handle_field_def_updated(*, envelope: Dict[str, Any] | None = None, payload:
 )
 def handle_field_def_deleted(*, envelope: Dict[str, Any] | None = None, payload: Dict[str, Any] | None = None) -> None:
     """Handle a deleted FieldDef event."""
-    event = _parse_envelope(envelope=envelope, payload=payload, task_name="conversa.field-def.deleted")
+    event = _parse_envelope(envelope=envelope, payload=payload, task_name="SchemaComposition.field-def.deleted")
     _propagate_trace(event)
     message = FieldDefDeletedMessage.model_validate(event.data)
     logger.info(

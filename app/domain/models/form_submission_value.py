@@ -20,6 +20,10 @@ class FormSubmissionValue(Base):
     """Database model for individual values within a form submission."""
 
     __tablename__ = "form_submission_value"
+    
+    __table_args__ = (
+        {"schema": "schema_composition"},
+    )
 
     form_submission_value_id: uuid.UUID = Column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, nullable=False

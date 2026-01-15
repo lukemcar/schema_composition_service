@@ -6,7 +6,7 @@ project when adding support for new domain objects defined in
 
 ## Overview
 
-The existing project defined a single domain (`MyEntity`) as an example.  To
+The existing project defined a single domain (`SchemaComposition`) as an example.  To
 support the additional tables in the DDL, we added new SQLAlchemy model classes
 and enumerations in the `app/domain/models` package.  Each model mirrors the
 structure of its corresponding table in the database and introduces

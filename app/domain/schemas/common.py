@@ -1,5 +1,5 @@
 """
-Common Pydantic schemas shared across the Dyno Conversa service.
+Common Pydantic schemas shared across the SchemaComposition service.
 
 This module defines reusable objects for error responses and pagination
 envelopes used by list endpoints.

@@ -51,7 +51,7 @@ All notable changes to this project will be documented in this file.
     ``/tenants/{tenant_id}/<resource>`` exposing standard CRUD
     endpoints with pagination and audit metadata injection.
   * Messaging producers and Celery tasks for each domain using routing
-    keys of the form ``conversa.<domain>.<event>``.
+    keys of the form ``SchemaComposition.<domain>.<event>``.
   * API test modules under ``tests/api`` verifying that each route
     delegates correctly to the service layer and wraps responses.
 

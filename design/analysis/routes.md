@@ -14,7 +14,7 @@ dependency.
 
 The file `app/api/routes/form_catalog_category.py` defines a router for
 `FormCatalogCategory`.  It introduces endpoints analogous to those in
-`my_entity.py`:
+`schema_composition.py`:
 
 * `GET /tenants/{tenant_id}/form-catalog-categories` – Lists categories
   with pagination.
@@ -53,7 +53,7 @@ for create, update and delete operations.
 ## Main API Registration
 
 `main_api.py` was updated to import and mount the new routers on the
-application.  After registering the health and `MyEntity` routers, it
+application.  After registering the health and `SchemaComposition` routers, it
 includes the `form_catalog_category` and `field_def` routers.  When
 additional domains are added, their routers must similarly be imported
 and registered to expose the endpoints.

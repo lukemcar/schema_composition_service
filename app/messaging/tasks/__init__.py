@@ -6,13 +6,11 @@ explicitly imports tasks from form session, action, and engagement modules.
 """
 
 # Import all task modules so Celery autodiscovery can find them
-from .my_entity_tasks import *  # noqa: F401,F403
 from .form_catalog_category_tasks import *  # noqa: F401,F403
 from .field_def_tasks import *  # noqa: F401,F403
 from .field_def_option_tasks import *  # noqa: F401,F403
 from .component_tasks import *  # noqa: F401,F403
 from .component_panel_tasks import *  # noqa: F401,F403
-from .component_panel_field_tasks import *  # noqa: F401,F403
 from .form_tasks import *  # noqa: F401,F403
 from .form_panel_tasks import *  # noqa: F401,F403
 from .form_panel_component_tasks import *  # noqa: F401,F403

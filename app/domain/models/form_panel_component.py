@@ -7,7 +7,7 @@ placement may include configuration overrides and ordering information.
 
 import uuid
 from datetime import datetime
-from sqlalchemy import Column, Integer, DateTime
+from sqlalchemy import Column, Integer, DateTime, String
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 
 from .base import Base
@@ -17,6 +17,10 @@ class FormPanelComponent(Base):
     """Database model for embedding Components into FormPanels."""
 
     __tablename__ = "form_panel_component"
+    
+    __table_args__ = (
+        {"schema": "schema_composition"},
+    )
 
     form_panel_component_id: uuid.UUID = Column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, nullable=False

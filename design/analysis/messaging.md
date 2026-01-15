@@ -12,7 +12,7 @@ A producer exposes static methods to emit ``created``, ``updated`` and
 ``deleted`` events.  Each method constructs an `EventEnvelope` from a
 Pydantic message class, injects correlation and message identifiers
 using the correlation utilities and sends the envelope via Celery.  The
-routing keys follow a consistent convention: ``conversa.<domain>.<event>``.
+routing keys follow a consistent convention: ``SchemaComposition.<domain>.<event>``.
 
 After the initial implementation for `FormCatalogCategory` and
 `FieldDef`, producers were added for every remaining domain object.  The
@@ -56,9 +56,9 @@ downstream workflows.
 
 The Celery application (`app/core/celery_app.py`) was expanded to
 declare queues for every domain.  For each domain ``x`` a durable
-queue ``conversa.x`` and a dead‑letter queue ``conversa.x.dlq`` are
-created.  Routing rules map the task names ``conversa.x.created``,
-``conversa.x.updated`` and ``conversa.x.deleted`` to the appropriate
+queue ``SchemaComposition.x`` and a dead‑letter queue ``SchemaComposition.x.dlq`` are
+created.  Routing rules map the task names ``SchemaComposition.x.created``,
+``SchemaComposition.x.updated`` and ``SchemaComposition.x.deleted`` to the appropriate
 queue.  The application continues to automatically discover tasks in
 `app/messaging/tasks` and applies OpenTelemetry instrumentation to
 instrument Celery and HTTPX interactions.  No changes were made to

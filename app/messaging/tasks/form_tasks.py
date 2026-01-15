@@ -30,7 +30,7 @@ def _parse_envelope(*, envelope: Dict[str, Any] | None, payload: Dict[str, Any] 
             "event_type": task_name,
             "schema_version": 1,
             "occurred_at": datetime.utcnow(),
-            "producer": "my-entity-service",
+            "producer": "schema-composition-service",
             "tenant_id": tenant_id,
             "correlation_id": None,
             "causation_id": None,
@@ -56,7 +56,7 @@ def _propagate_trace(event: EventEnvelope) -> None:
 
 
 @celery_app.task(
-    name="conversa.form.created",
+    name="SchemaComposition.form.created",
     autoretry_for=(Exception,),
     retry_backoff=True,
     retry_jitter=True,
@@ -64,7 +64,7 @@ def _propagate_trace(event: EventEnvelope) -> None:
     acks_late=True,
 )
 def handle_form_created(*, envelope: Dict[str, Any] | None = None, payload: Dict[str, Any] | None = None) -> None:
-    event = _parse_envelope(envelope=envelope, payload=payload, task_name="conversa.form.created")
+    event = _parse_envelope(envelope=envelope, payload=payload, task_name="SchemaComposition.form.created")
     _propagate_trace(event)
     message = FormCreatedMessage.model_validate(event.data)
     logger.info(
@@ -79,7 +79,7 @@ def handle_form_created(*, envelope: Dict[str, Any] | None = None, payload: Dict
 
 
 @celery_app.task(
-    name="conversa.form.updated",
+    name="SchemaComposition.form.updated",
     autoretry_for=(Exception,),
     retry_backoff=True,
     retry_jitter=True,
@@ -87,7 +87,7 @@ def handle_form_created(*, envelope: Dict[str, Any] | None = None, payload: Dict
     acks_late=True,
 )
 def handle_form_updated(*, envelope: Dict[str, Any] | None = None, payload: Dict[str, Any] | None = None) -> None:
-    event = _parse_envelope(envelope=envelope, payload=payload, task_name="conversa.form.updated")
+    event = _parse_envelope(envelope=envelope, payload=payload, task_name="SchemaComposition.form.updated")
     _propagate_trace(event)
     message = FormUpdatedMessage.model_validate(event.data)
     logger.info(
@@ -103,7 +103,7 @@ def handle_form_updated(*, envelope: Dict[str, Any] | None = None, payload: Dict
 
 
 @celery_app.task(
-    name="conversa.form.deleted",
+    name="SchemaComposition.form.deleted",
     autoretry_for=(Exception,),
     retry_backoff=True,
     retry_jitter=True,
@@ -111,7 +111,7 @@ def handle_form_updated(*, envelope: Dict[str, Any] | None = None, payload: Dict
     acks_late=True,
 )
 def handle_form_deleted(*, envelope: Dict[str, Any] | None = None, payload: Dict[str, Any] | None = None) -> None:
-    event = _parse_envelope(envelope=envelope, payload=payload, task_name="conversa.form.deleted")
+    event = _parse_envelope(envelope=envelope, payload=payload, task_name="SchemaComposition.form.deleted")
     _propagate_trace(event)
     message = FormDeletedMessage.model_validate(event.data)
     logger.info(

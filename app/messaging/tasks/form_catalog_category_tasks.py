@@ -53,7 +53,7 @@ def _parse_envelope(*, envelope: Dict[str, Any] | None, payload: Dict[str, Any] 
             "event_type": task_name,
             "schema_version": 1,
             "occurred_at": datetime.utcnow(),
-            "producer": "my-entity-service",
+            "producer": "schema-composition-service",
             "tenant_id": tenant_id,
             "correlation_id": None,
             "causation_id": None,
@@ -95,7 +95,7 @@ def _propagate_trace(event: EventEnvelope) -> None:
 
 
 @celery_app.task(
-    name="conversa.form-catalog-category.created",
+    name="SchemaComposition.form-catalog-category.created",
     autoretry_for=(Exception,),
     retry_backoff=True,
     retry_jitter=True,
@@ -108,7 +108,7 @@ def handle_form_catalog_category_created(*, envelope: Dict[str, Any] | None = No
     Logs the event details.  In a real application you could update
     derived read models or trigger downstream workflows here.
     """
-    event = _parse_envelope(envelope=envelope, payload=payload, task_name="conversa.form-catalog-category.created")
+    event = _parse_envelope(envelope=envelope, payload=payload, task_name="SchemaComposition.form-catalog-category.created")
     _propagate_trace(event)
     # Validate domain payload
     message = FormCatalogCategoryCreatedMessage.model_validate(event.data)
@@ -124,7 +124,7 @@ def handle_form_catalog_category_created(*, envelope: Dict[str, Any] | None = No
 
 
 @celery_app.task(
-    name="conversa.form-catalog-category.updated",
+    name="SchemaComposition.form-catalog-category.updated",
     autoretry_for=(Exception,),
     retry_backoff=True,
     retry_jitter=True,
@@ -133,7 +133,7 @@ def handle_form_catalog_category_created(*, envelope: Dict[str, Any] | None = No
 )
 def handle_form_catalog_category_updated(*, envelope: Dict[str, Any] | None = None, payload: Dict[str, Any] | None = None) -> None:
     """Handle an updated FormCatalogCategory event."""
-    event = _parse_envelope(envelope=envelope, payload=payload, task_name="conversa.form-catalog-category.updated")
+    event = _parse_envelope(envelope=envelope, payload=payload, task_name="SchemaComposition.form-catalog-category.updated")
     _propagate_trace(event)
     message = FormCatalogCategoryUpdatedMessage.model_validate(event.data)
     logger.info(
@@ -149,7 +149,7 @@ def handle_form_catalog_category_updated(*, envelope: Dict[str, Any] | None = No
 
 
 @celery_app.task(
-    name="conversa.form-catalog-category.deleted",
+    name="SchemaComposition.form-catalog-category.deleted",
     autoretry_for=(Exception,),
     retry_backoff=True,
     retry_jitter=True,
@@ -158,7 +158,7 @@ def handle_form_catalog_category_updated(*, envelope: Dict[str, Any] | None = No
 )
 def handle_form_catalog_category_deleted(*, envelope: Dict[str, Any] | None = None, payload: Dict[str, Any] | None = None) -> None:
     """Handle a deleted FormCatalogCategory event."""
-    event = _parse_envelope(envelope=envelope, payload=payload, task_name="conversa.form-catalog-category.deleted")
+    event = _parse_envelope(envelope=envelope, payload=payload, task_name="SchemaComposition.form-catalog-category.deleted")
     _propagate_trace(event)
     message = FormCatalogCategoryDeletedMessage.model_validate(event.data)
     logger.info(

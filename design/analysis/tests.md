@@ -5,7 +5,7 @@ exercise the newly implemented domains.
 
 ## Overview
 
-The starter project included tests for the `MyEntity` domain across both
+The starter project included tests for the `SchemaComposition` domain across both
 the API and service layers.  Building on that pattern, API tests were
 added for every new domain introduced from the simplified DDL.  These
 tests focus on the routing layer and verify that each endpoint forwards
@@ -21,7 +21,7 @@ endpoints for the new domains:
 |-------|--------|---------|
 | `test_form_catalog_category.py` | FormCatalogCategory | Verifies list, create, get, update and delete routes call the category service with correct arguments and wrap responses. |
 | `test_field_def.py` | FieldDef | Ensures the field definition routes delegate to the service functions with tenant scope and wrap paginated lists. |
-| `test_field_def_option.py` | FieldDefOption | Confirms option routes handle filtering by `field_def_id`, use the current user’s subject for `created_by`/`modified_by` fields, and return service results unchanged. |
+| `test_field_def_option.py` | FieldDefOption | Confirms option routes handle filtering by `field_def_id`, use the current user's subject for `created_by`/`modified_by` fields, and return service results unchanged. |
 | `test_component.py` | Component | Tests that component routes forward business keys and version information, capture the user performing the action and wrap list responses. |
 | `test_component_panel.py` | ComponentPanel | Validates that panel routes accept optional filters by component and parent panel, propagate audit information and wrap paginated results. |
 | `test_component_panel_field.py` | ComponentPanelField | Checks that panel field routes pass through parent IDs, field IDs, override data and ordering and that responses are returned as provided. |
@@ -40,7 +40,7 @@ assert that the route functions:
 
 * Pass the correct tenant ID, identifiers, filter parameters and payloads
   to the service layer.
-* Use the authenticated user’s `sub` claim as the `created_by` or
+* Use the authenticated user's `sub` claim as the `created_by` or
   `modified_by` actor when these fields are omitted by the client.
 * Wrap lists of domain objects in the corresponding `ListResponse`
   envelope with total counts, limits and offsets.

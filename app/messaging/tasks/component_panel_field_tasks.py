@@ -30,7 +30,7 @@ def _parse_envelope(*, envelope: Dict[str, Any] | None, payload: Dict[str, Any] 
             "event_type": task_name,
             "schema_version": 1,
             "occurred_at": datetime.utcnow(),
-            "producer": "my-entity-service",
+            "producer": "schema-composition-service",
             "tenant_id": tenant_id,
             "correlation_id": None,
             "causation_id": None,
@@ -56,7 +56,7 @@ def _propagate_trace(event: EventEnvelope) -> None:
 
 
 @celery_app.task(
-    name="conversa.component-panel-field.created",
+    name="SchemaComposition.component-panel-field.created",
     autoretry_for=(Exception,),
     retry_backoff=True,
     retry_jitter=True,
@@ -65,7 +65,7 @@ def _propagate_trace(event: EventEnvelope) -> None:
 )
 def handle_component_panel_field_created(*, envelope: Dict[str, Any] | None = None, payload: Dict[str, Any] | None = None) -> None:
     event = _parse_envelope(
-        envelope=envelope, payload=payload, task_name="conversa.component-panel-field.created"
+        envelope=envelope, payload=payload, task_name="SchemaComposition.component-panel-field.created"
     )
     _propagate_trace(event)
     message = ComponentPanelFieldCreatedMessage.model_validate(event.data)
@@ -83,7 +83,7 @@ def handle_component_panel_field_created(*, envelope: Dict[str, Any] | None = No
 
 
 @celery_app.task(
-    name="conversa.component-panel-field.updated",
+    name="SchemaComposition.component-panel-field.updated",
     autoretry_for=(Exception,),
     retry_backoff=True,
     retry_jitter=True,
@@ -92,7 +92,7 @@ def handle_component_panel_field_created(*, envelope: Dict[str, Any] | None = No
 )
 def handle_component_panel_field_updated(*, envelope: Dict[str, Any] | None = None, payload: Dict[str, Any] | None = None) -> None:
     event = _parse_envelope(
-        envelope=envelope, payload=payload, task_name="conversa.component-panel-field.updated"
+        envelope=envelope, payload=payload, task_name="SchemaComposition.component-panel-field.updated"
     )
     _propagate_trace(event)
     message = ComponentPanelFieldUpdatedMessage.model_validate(event.data)
@@ -111,7 +111,7 @@ def handle_component_panel_field_updated(*, envelope: Dict[str, Any] | None = No
 
 
 @celery_app.task(
-    name="conversa.component-panel-field.deleted",
+    name="SchemaComposition.component-panel-field.deleted",
     autoretry_for=(Exception,),
     retry_backoff=True,
     retry_jitter=True,
@@ -120,7 +120,7 @@ def handle_component_panel_field_updated(*, envelope: Dict[str, Any] | None = No
 )
 def handle_component_panel_field_deleted(*, envelope: Dict[str, Any] | None = None, payload: Dict[str, Any] | None = None) -> None:
     event = _parse_envelope(
-        envelope=envelope, payload=payload, task_name="conversa.component-panel-field.deleted"
+        envelope=envelope, payload=payload, task_name="SchemaComposition.component-panel-field.deleted"
     )
     _propagate_trace(event)
     message = ComponentPanelFieldDeletedMessage.model_validate(event.data)

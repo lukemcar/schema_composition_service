@@ -9,12 +9,6 @@ models as part of the public API.
 from .common import *  # noqa: F401,F403
 from .health import HealthResponse  # noqa: F401
 from .json_patch import JsonPatchRequest, JsonPatchOperation  # noqa: F401
-from .my_entity import (
-    MyEntityCreate,
-    MyEntityUpdate,
-    MyEntityOut,
-    MyEntityListResponse,
-)  # noqa: F401
 from .form_catalog_category import (
     FormCatalogCategoryCreate,
     FormCatalogCategoryUpdate,
@@ -93,10 +87,6 @@ __all__ = [
     "HealthResponse",
     "JsonPatchRequest",
     "JsonPatchOperation",
-    "MyEntityCreate",
-    "MyEntityUpdate",
-    "MyEntityOut",
-    "MyEntityListResponse",
     "FormCatalogCategoryCreate",
     "FormCatalogCategoryUpdate",
     "FormCatalogCategoryOut",

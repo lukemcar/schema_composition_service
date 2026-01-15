@@ -45,7 +45,7 @@ class FormPanelComponentProducer:
         )
         envelope = EventEnvelope.create(message.model_dump(mode="json"), FormPanelComponentCreatedMessage)
         celery_app.send_task(
-            "conversa.form-panel-component.created",
+            "SchemaComposition.form-panel-component.created",
             args=[envelope.model_dump(mode="json")],
             headers=FormPanelComponentProducer._build_headers(),
         )
@@ -70,7 +70,7 @@ class FormPanelComponentProducer:
         )
         envelope = EventEnvelope.create(message.model_dump(mode="json"), FormPanelComponentUpdatedMessage)
         celery_app.send_task(
-            "conversa.form-panel-component.updated",
+            "SchemaComposition.form-panel-component.updated",
             args=[envelope.model_dump(mode="json")],
             headers=FormPanelComponentProducer._build_headers(),
         )
@@ -91,7 +91,7 @@ class FormPanelComponentProducer:
         )
         envelope = EventEnvelope.create(message.model_dump(mode="json"), FormPanelComponentDeletedMessage)
         celery_app.send_task(
-            "conversa.form-panel-component.deleted",
+            "SchemaComposition.form-panel-component.deleted",
             args=[envelope.model_dump(mode="json")],
             headers=FormPanelComponentProducer._build_headers(),
         )

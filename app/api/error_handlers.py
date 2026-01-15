@@ -1,5 +1,5 @@
 """
-Centralised exception handlers for Dyno Conversa API.
+Centralised exception handlers for SchemaComposition API.
 
 This module registers exception handlers on a FastAPI application to
 ensure all errors are returned in a consistent format using the

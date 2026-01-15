@@ -40,18 +40,18 @@ def test_init_tracing_env_precedence(monkeypatch: Any) -> None:
     TracerProvider = pytest.importorskip("opentelemetry.sdk.trace").TracerProvider  # type: ignore
 
     # Set the environment variable to override the service name
-    monkeypatch.setenv("OTEL_SERVICE_NAME", "my-entity-service.api")
+    monkeypatch.setenv("OTEL_SERVICE_NAME", "schema-composition-service.api")
 
     # Reload telemetry to ensure a clean state before configuration.
     from app.core import telemetry  # type: ignore
     importlib.reload(telemetry)
 
     # Call init_tracing with an explicit service name; the env should win.
-    telemetry.init_tracing(service_name="my-entity-service.api")
+    telemetry.init_tracing(service_name="schema-composition-service.api")
 
     provider = trace.get_tracer_provider()
     assert isinstance(provider, TracerProvider)
 
     service_name = _get_service_name_from_provider(provider)
     if service_name is not None:
-        assert service_name == "my-entity-service.api"
+        assert service_name == "schema-composition-service.api"

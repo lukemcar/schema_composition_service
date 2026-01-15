@@ -1,5 +1,5 @@
 """
-Minimal AI agent implementation for the MyEntity service.
+Minimal AI agent implementation for the SchemaComposition service.
 
 This agent simply echoes back the prompt it receives in a structured
 response.  It demonstrates how to encapsulate AI logic in a class and

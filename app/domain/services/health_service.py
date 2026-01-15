@@ -10,7 +10,7 @@ from app.core.db import check_database_connection
 from app.domain.schemas.health import HealthResponse
 
 
-logger = logging.getLogger("my_entity_service.health_service")
+logger = logging.getLogger("schema_composition_service.health_service")
 
 
 def get_liveness() -> HealthResponse:
@@ -20,7 +20,7 @@ def get_liveness() -> HealthResponse:
     responding to the probe.  Adjust this string when copying the
     pattern to a new service.
     """
-    return HealthResponse(status="ok", details={"service": "my-entity-service"})
+    return HealthResponse(status="ok", details={"service": "schema-composition-service"})
 
 
 def get_readiness() -> HealthResponse:

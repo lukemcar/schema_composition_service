@@ -40,7 +40,7 @@ class ComponentProducer:
         )
         envelope = EventEnvelope.create(message.model_dump(mode="json"), ComponentCreatedMessage)
         celery_app.send_task(
-            "conversa.component.created",
+            "SchemaComposition.component.created",
             args=[envelope.model_dump(mode="json")],
             headers=ComponentProducer._build_headers(),
         )
@@ -57,7 +57,7 @@ class ComponentProducer:
         )
         envelope = EventEnvelope.create(message.model_dump(mode="json"), ComponentUpdatedMessage)
         celery_app.send_task(
-            "conversa.component.updated",
+            "SchemaComposition.component.updated",
             args=[envelope.model_dump(mode="json")],
             headers=ComponentProducer._build_headers(),
         )
@@ -70,7 +70,7 @@ class ComponentProducer:
         )
         envelope = EventEnvelope.create(message.model_dump(mode="json"), ComponentDeletedMessage)
         celery_app.send_task(
-            "conversa.component.deleted",
+            "SchemaComposition.component.deleted",
             args=[envelope.model_dump(mode="json")],
             headers=ComponentProducer._build_headers(),
         )

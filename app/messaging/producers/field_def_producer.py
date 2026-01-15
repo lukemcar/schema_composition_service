@@ -32,16 +32,16 @@ from app.util.correlation import (
 class FieldDefProducer:
     """Publishes FieldDef events via Celery.
 
-    The task names double as routing keys on the ``conversa`` exchange.
-    They follow the naming convention ``conversa.field-def.<event>`` to
+    The task names double as routing keys on the ``SchemaComposition`` exchange.
+    They follow the naming convention ``SchemaComposition.field-def.<event>`` to
     enable fine‑grained routing by queue bindings.  When creating a new
     producer for your domain follow this pattern and ensure the Celery
     configuration defines matching routes.
     """
 
-    TASK_CREATED = "conversa.field-def.created"
-    TASK_UPDATED = "conversa.field-def.updated"
-    TASK_DELETED = "conversa.field-def.deleted"
+    TASK_CREATED = "SchemaComposition.field-def.created"
+    TASK_UPDATED = "SchemaComposition.field-def.updated"
+    TASK_DELETED = "SchemaComposition.field-def.deleted"
 
     @staticmethod
     def _build_headers(*, tenant_id: UUID, field_def_id: UUID) -> Dict[str, str]:
@@ -66,7 +66,7 @@ class FieldDefProducer:
             event_type=task_name,
             schema_version=1,
             occurred_at=datetime.utcnow(),
-            producer="my-entity-service",
+            producer="schema-composition-service",
             tenant_id=message_model.tenant_id,
             correlation_id=get_correlation_id(),
             causation_id=get_message_id(),

@@ -1,5 +1,5 @@
 """
-Database layer for the MyEntity Service.
+Database layer for the SchemaComposition Service.
 
 This module lazily initializes the SQLAlchemy engine and session factory.
 Why:
@@ -37,8 +37,7 @@ Base = declarative_base()
 try:
     # Import domain models to register them with SQLAlchemy.  Additional
     # models should be imported here when new domains are added.  The
-    # enums module is imported indirectly via the models package.
-    from app.domain.models import MyEntity  # noqa: F401
+    # enums module is imported indirectly via the models package.\
     from app.domain.models import FormCatalogCategory  # noqa: F401
     from app.domain.models import FieldDef  # noqa: F401
     from app.domain.models import FieldDefOption  # noqa: F401
@@ -140,7 +139,7 @@ def check_database_connection() -> bool:
             connection.execute(text("SELECT 1"))
         return True
     except Exception as exc:
-        logging.getLogger("my_entity_service.db").error(
+        logging.getLogger("schema_composition_service.db").error(
             "Database readiness check failed", exc_info=exc
         )
         raise
@@ -168,7 +167,6 @@ __all__ = [
     "check_database_connection",
     "reset_db_for_tests",
     # Export models for type hints and convenience
-    "MyEntity",
     "FormCatalogCategory",
     "FieldDef",
     "FieldDefOption",

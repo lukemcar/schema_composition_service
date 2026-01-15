@@ -32,16 +32,16 @@ from app.util.correlation import (
 class FormCatalogCategoryProducer:
     """Publishes FormCatalogCategory events via Celery.
 
-    The task names double as routing keys on the ``conversa`` exchange.
-    They follow the naming convention ``conversa.<domain>.<event>`` to
+    The task names double as routing keys on the ``SchemaComposition`` exchange.
+    They follow the naming convention ``SchemaComposition.<domain>.<event>`` to
     enable fine‑grained routing by queue bindings.  When creating a new
     producer for your domain follow this pattern and ensure the Celery
     configuration defines matching routes.
     """
 
-    TASK_CREATED = "conversa.form-catalog-category.created"
-    TASK_UPDATED = "conversa.form-catalog-category.updated"
-    TASK_DELETED = "conversa.form-catalog-category.deleted"
+    TASK_CREATED = "SchemaComposition.form-catalog-category.created"
+    TASK_UPDATED = "SchemaComposition.form-catalog-category.updated"
+    TASK_DELETED = "SchemaComposition.form-catalog-category.deleted"
 
     @staticmethod
     def _build_headers(*, tenant_id: UUID, form_catalog_category_id: UUID) -> Dict[str, str]:
@@ -76,7 +76,7 @@ class FormCatalogCategoryProducer:
             event_type=task_name,
             schema_version=1,
             occurred_at=datetime.utcnow(),
-            producer="my-entity-service",
+            producer="schema-composition-service",
             tenant_id=message_model.tenant_id,
             correlation_id=get_correlation_id(),
             causation_id=get_message_id(),

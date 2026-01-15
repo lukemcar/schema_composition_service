@@ -27,7 +27,7 @@
 --
 -- ======================================================================
 
-SET search_path TO public, dyno_form;
+SET search_path TO public, schema_composition;
 
 
 
@@ -64,7 +64,7 @@ SET search_path TO public, dyno_form;
 -- ----------------------------------------------------------------------
 
 DO $$ BEGIN
-    CREATE TYPE dyno_form.field_data_type AS ENUM (
+    CREATE TYPE schema_composition.field_data_type AS ENUM (
         'TEXT',
         'NUMBER',
         'BOOLEAN',
@@ -90,7 +90,7 @@ END $$;
 -- ----------------------------------------------------------------------
 
 DO $$ BEGIN
-    CREATE TYPE dyno_form.field_element_type AS ENUM (
+    CREATE TYPE schema_composition.field_element_type AS ENUM (
         'TEXT',
         'TEXTAREA',
         'DATE',
@@ -111,7 +111,7 @@ END $$;
 -- PURPOSE
 --   Classifies the provenance of a marketplace artifact installed for a tenant.
 DO $$ BEGIN
-    CREATE TYPE dyno_form.artifact_source_type AS ENUM (
+    CREATE TYPE schema_composition.artifact_source_type AS ENUM (
         'MARKETPLACE', 'PROVIDER', 'TENANT', 'SYSTEM'
     );
 EXCEPTION WHEN duplicate_object THEN NULL;
@@ -119,7 +119,7 @@ END $$;
 
 
 -- ----------------------------------------------------------------------
--- Table: dyno_form.form_catalog_category
+-- Table: schema_composition.form_catalog_category
 -- ----------------------------------------------------------------------
 -- PURPOSE
 --   Tenant-scoped category used to organize reusable form elements (field
@@ -140,7 +140,7 @@ END $$;
 --   - updated_at is maintained by application code or a DB trigger (not included here).
 -- ----------------------------------------------------------------------
 
-CREATE TABLE IF NOT EXISTS dyno_form.form_catalog_category (
+CREATE TABLE IF NOT EXISTS schema_composition.form_catalog_category (
     id UUID PRIMARY KEY,
     tenant_id UUID NOT NULL,
 
@@ -181,53 +181,53 @@ CREATE TABLE IF NOT EXISTS dyno_form.form_catalog_category (
 
 -- Common builder query: active categories per tenant.
 CREATE INDEX IF NOT EXISTS ix_form_catalog_category_tenant_active
-    ON dyno_form.form_catalog_category (tenant_id, is_active);
+    ON schema_composition.form_catalog_category (tenant_id, is_active);
 
 -- Optional: search by name in admin/builder UI.
 CREATE INDEX IF NOT EXISTS ix_form_catalog_category_tenant_name_lower
-    ON dyno_form.form_catalog_category (tenant_id, lower(category_name));
+    ON schema_composition.form_catalog_category (tenant_id, lower(category_name));
 
 -- ----------------------------------------------------------------------
 -- Comments
 -- ----------------------------------------------------------------------
 
-COMMENT ON TABLE dyno_form.form_catalog_category IS
+COMMENT ON TABLE schema_composition.form_catalog_category IS
 'Tenant-scoped category used to organize reusable builder palette elements (field definitions and components). Intended for UI grouping (accordion) and marketplace browsing.';
 
-COMMENT ON COLUMN dyno_form.form_catalog_category.id IS
+COMMENT ON COLUMN schema_composition.form_catalog_category.id IS
 'Primary row identifier (UUID). Immutable technical identity.';
 
-COMMENT ON COLUMN dyno_form.form_catalog_category.tenant_id IS
+COMMENT ON COLUMN schema_composition.form_catalog_category.tenant_id IS
 'Tenant boundary. Categories are tenant-scoped for isolation and customization.';
 
-COMMENT ON COLUMN dyno_form.form_catalog_category.category_key IS
+COMMENT ON COLUMN schema_composition.form_catalog_category.category_key IS
 'Stable tenant-scoped identifier for the category (used for import/export and marketplace alignment).';
 
-COMMENT ON COLUMN dyno_form.form_catalog_category.category_name IS
+COMMENT ON COLUMN schema_composition.form_catalog_category.category_name IS
 'Human-readable category label shown in builder UI (unique within tenant).';
 
-COMMENT ON COLUMN dyno_form.form_catalog_category.description IS
+COMMENT ON COLUMN schema_composition.form_catalog_category.description IS
 'Optional description shown in admin/builder UI.';
 
-COMMENT ON COLUMN dyno_form.form_catalog_category.is_active IS
+COMMENT ON COLUMN schema_composition.form_catalog_category.is_active IS
 'When true, category is available for selection/use in builder UI; when false it is hidden/disabled.';
 
-COMMENT ON COLUMN dyno_form.form_catalog_category.created_at IS
+COMMENT ON COLUMN schema_composition.form_catalog_category.created_at IS
 'Row creation timestamp.';
 
-COMMENT ON COLUMN dyno_form.form_catalog_category.updated_at IS
+COMMENT ON COLUMN schema_composition.form_catalog_category.updated_at IS
 'Row last-updated timestamp. Typically maintained by application code or a trigger.';
 
-COMMENT ON COLUMN dyno_form.form_catalog_category.created_by IS
+COMMENT ON COLUMN schema_composition.form_catalog_category.created_by IS
 'Optional actor identifier (username/service) that created the row.';
 
-COMMENT ON COLUMN dyno_form.form_catalog_category.updated_by IS
+COMMENT ON COLUMN schema_composition.form_catalog_category.updated_by IS
 'Optional actor identifier (username/service) that last updated the row.';
 
 
 
 -- ----------------------------------------------------------------------
--- Table: dyno_form.field_def
+-- Table: schema_composition.field_def
 -- ----------------------------------------------------------------------
 -- PURPOSE
 --   Defines a reusable field definition (catalog entry) for a tenant.
@@ -277,7 +277,7 @@ COMMENT ON COLUMN dyno_form.form_catalog_category.updated_by IS
 --   - element_type MULTISELECT -> data_type must be MULTISELECT
 -- ----------------------------------------------------------------------
 
-CREATE TABLE IF NOT EXISTS dyno_form.field_def (
+CREATE TABLE IF NOT EXISTS schema_composition.field_def (
     id UUID PRIMARY KEY,
     tenant_id UUID NOT NULL,
 
@@ -303,10 +303,10 @@ CREATE TABLE IF NOT EXISTS dyno_form.field_def (
 
     -- Semantic data shape stored for this field.
     -- NULL only when element_type=ACTION.
-    data_type dyno_form.field_data_type,
+    data_type schema_composition.field_data_type,
 
     -- UI element type for rendering / behavior.
-    element_type dyno_form.field_element_type NOT NULL,
+    element_type schema_composition.field_element_type NOT NULL,
 
     -- Optional JSON configuration for validation rules (data fields only).
     validation JSONB,
@@ -349,7 +349,7 @@ CREATE TABLE IF NOT EXISTS dyno_form.field_def (
     --
     -- This value is set at creation or install time and should be treated
     -- as immutable for the lifetime of the artifact.
-    source_type dyno_form.artifact_source_type,
+    source_type schema_composition.artifact_source_type,
 
     -- ------------------------------------------------------------------
     -- Provenance / source metadata (immutable imports)
@@ -429,7 +429,7 @@ CREATE TABLE IF NOT EXISTS dyno_form.field_def (
     --   - admin username
     --   - system bootstrap service
     --   - marketplace installer service
-    installed_by VARCHAR(100)
+    installed_by VARCHAR(100),
 
 
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -447,7 +447,7 @@ CREATE TABLE IF NOT EXISTS dyno_form.field_def (
     -- Tenant-safe FK to builder palette category.
     CONSTRAINT fk_field_def_category_tenant
         FOREIGN KEY (tenant_id, category_id)
-        REFERENCES dyno_form.form_catalog_category (tenant_id, id)
+        REFERENCES schema_composition.form_catalog_category (tenant_id, id)
         ON DELETE SET NULL,
 
     -- Business key must not be blank/whitespace.
@@ -495,110 +495,110 @@ CREATE TABLE IF NOT EXISTS dyno_form.field_def (
 
 -- Lookup/filter by default field key within tenant (NOT unique).
 CREATE INDEX IF NOT EXISTS ix_field_def_tenant_field_key
-    ON dyno_form.field_def (tenant_id, field_key);
+    ON schema_composition.field_def (tenant_id, field_key);
 
 -- Builder palette filtering: list field defs by tenant and category.
 CREATE INDEX IF NOT EXISTS ix_field_def_tenant_category
-    ON dyno_form.field_def (tenant_id, category_id)
+    ON schema_composition.field_def (tenant_id, category_id)
     WHERE category_id IS NOT NULL;
 
 -- Common catalog filtering: list field defs by tenant and element type.
 CREATE INDEX IF NOT EXISTS ix_field_def_tenant_element_type
-    ON dyno_form.field_def (tenant_id, element_type);
+    ON schema_composition.field_def (tenant_id, element_type);
 
 -- Common catalog filtering: list field defs by tenant and data type.
 CREATE INDEX IF NOT EXISTS ix_field_def_tenant_data_type
-    ON dyno_form.field_def (tenant_id, data_type)
+    ON schema_composition.field_def (tenant_id, data_type)
     WHERE data_type IS NOT NULL;
 
 -- Optional: search by label in admin UI.
 CREATE INDEX IF NOT EXISTS ix_field_def_tenant_label
-    ON dyno_form.field_def (tenant_id, lower(label));
+    ON schema_composition.field_def (tenant_id, lower(label));
 
 -- Optional: search within category by label in builder UI.
 CREATE INDEX IF NOT EXISTS ix_field_def_tenant_category_label
-    ON dyno_form.field_def (tenant_id, category_id, lower(label))
+    ON schema_composition.field_def (tenant_id, category_id, lower(label))
     WHERE category_id IS NOT NULL;
 
 CREATE INDEX IF NOT EXISTS ix_field_def_tenant_source_type
-    ON dyno_form.field_def (tenant_id, source_type);
+    ON schema_composition.field_def (tenant_id, source_type);
 
 CREATE INDEX IF NOT EXISTS ix_field_def_tenant_source_keys
-    ON dyno_form.field_def (tenant_id, source_package_key, source_artifact_key, source_artifact_version);
+    ON schema_composition.field_def (tenant_id, source_package_key, source_artifact_key, source_artifact_version);
 
 -- ----------------------------------------------------------------------
 -- Comments
 -- ----------------------------------------------------------------------
 
-COMMENT ON TABLE dyno_form.field_def IS
+COMMENT ON TABLE schema_composition.field_def IS
 'Reusable tenant-scoped field definition catalog artifact. Supports versioned artifact identity (field_def_business_key + field_def_version) for safe evolution and marketplace alignment. field_key is a default/suggested key that may be overridden at placement time and is therefore not tenant-unique.';
 
-COMMENT ON COLUMN dyno_form.field_def.id IS
+COMMENT ON COLUMN schema_composition.field_def.id IS
 'Primary row identifier (UUID). Immutable technical identity.';
 
-COMMENT ON COLUMN dyno_form.field_def.tenant_id IS
+COMMENT ON COLUMN schema_composition.field_def.tenant_id IS
 'Tenant boundary. All field definitions are tenant-scoped for isolation, access control, and customization.';
 
-COMMENT ON COLUMN dyno_form.field_def.field_def_business_key IS
+COMMENT ON COLUMN schema_composition.field_def.field_def_business_key IS
 'Versioned artifact identity key (tenant-scoped). Intended to be immutable after creation. Used to align installs/upgrades across provider/marketplace packages. Uniqueness is enforced together with field_def_version per tenant.';
 
-COMMENT ON COLUMN dyno_form.field_def.field_def_version IS
+COMMENT ON COLUMN schema_composition.field_def.field_def_version IS
 'Version number for the artifact identified by (tenant_id, field_def_business_key). Must be >= 1. New versions represent new releases of the same conceptual field definition.';
 
-COMMENT ON COLUMN dyno_form.field_def.name IS
+COMMENT ON COLUMN schema_composition.field_def.name IS
 'Human-readable internal/admin name for the field definition (catalog display).';
 
-COMMENT ON COLUMN dyno_form.field_def.description IS
+COMMENT ON COLUMN schema_composition.field_def.description IS
 'Optional human-readable description for catalog/admin tooling.';
 
-COMMENT ON COLUMN dyno_form.field_def.field_key IS
+COMMENT ON COLUMN schema_composition.field_def.field_key IS
 'Default/suggested key for this field definition. Used as a starting point for builder/runtime, but may be overridden in placement-level configs or imprinted snapshots; therefore it is NOT tenant-unique. Indexed for lookup/filtering.';
 
-COMMENT ON COLUMN dyno_form.field_def.label IS
+COMMENT ON COLUMN schema_composition.field_def.label IS
 'Human-readable label shown in UI by default. Placements may override label in imprinted configs/overrides.';
 
-COMMENT ON COLUMN dyno_form.field_def.category_id IS
-'Optional reference to dyno_form.form_catalog_category used to group field definitions in builder palette UI (accordion/categories). Tenant-local classification only.';
+COMMENT ON COLUMN schema_composition.field_def.category_id IS
+'Optional reference to schema_composition.form_catalog_category used to group field definitions in builder palette UI (accordion/categories). Tenant-local classification only.';
 
-COMMENT ON COLUMN dyno_form.field_def.data_type IS
+COMMENT ON COLUMN schema_composition.field_def.data_type IS
 'Semantic data shape stored for this field. Must be NULL only when element_type is ACTION; otherwise required.';
 
-COMMENT ON COLUMN dyno_form.field_def.element_type IS
+COMMENT ON COLUMN schema_composition.field_def.element_type IS
 'UI rendering/behavior type for this field definition (TEXT, TEXTAREA, SELECT, ACTION, etc.).';
 
-COMMENT ON COLUMN dyno_form.field_def.validation IS
+COMMENT ON COLUMN schema_composition.field_def.validation IS
 'Optional JSONB validation rules for data-capturing fields. Typically NULL for ACTION elements.';
 
-COMMENT ON COLUMN dyno_form.field_def.ui_config IS
+COMMENT ON COLUMN schema_composition.field_def.ui_config IS
 'Optional JSONB UI hints and behavior configuration. For ACTION elements, contains action configuration (what the action does).';
 
-COMMENT ON COLUMN dyno_form.field_def.is_published IS
+COMMENT ON COLUMN schema_composition.field_def.is_published IS
 'When true, field definition is available in catalog/builder surfaces for selection/use.';
 
-COMMENT ON COLUMN dyno_form.field_def.published_at IS
+COMMENT ON COLUMN schema_composition.field_def.published_at IS
 'Timestamp when the field definition was published (if tracked by application/workflow).';
 
-COMMENT ON COLUMN dyno_form.field_def.is_archived IS
+COMMENT ON COLUMN schema_composition.field_def.is_archived IS
 'When true, field definition is archived and should not be offered for new use, but is retained for history/back-compat.';
 
-COMMENT ON COLUMN dyno_form.field_def.archived_at IS
+COMMENT ON COLUMN schema_composition.field_def.archived_at IS
 'Timestamp when the field definition was archived (if tracked by application/workflow).';
 
-COMMENT ON COLUMN dyno_form.field_def.created_at IS
+COMMENT ON COLUMN schema_composition.field_def.created_at IS
 'Row creation timestamp.';
 
-COMMENT ON COLUMN dyno_form.field_def.updated_at IS
+COMMENT ON COLUMN schema_composition.field_def.updated_at IS
 'Row last-updated timestamp. Typically maintained by application code or a trigger.';
 
-COMMENT ON COLUMN dyno_form.field_def.created_by IS
+COMMENT ON COLUMN schema_composition.field_def.created_by IS
 'Optional actor identifier (username/service) that created the row.';
 
-COMMENT ON COLUMN dyno_form.field_def.updated_by IS
+COMMENT ON COLUMN schema_composition.field_def.updated_by IS
 'Optional actor identifier (username/service) that last updated the row.';
 
 ----
 
-COMMENT ON COLUMN dyno_form.field_def.source_type IS
+COMMENT ON COLUMN schema_composition.field_def.source_type IS
 'Identifies the origin of this artifact at creation or installation time. Distinguishes system-provided, provider-distributed, marketplace-installed, and tenant-created artifacts. Used for governance, builder palette filtering, upgrade and compatibility workflows, lifecycle management, and audit diagnostics. This value is intended to be immutable once set.';
 
 
@@ -622,7 +622,7 @@ COMMENT ON COLUMN dyno_form.field_def.source_type IS
 --     uniqueness within a field definition.
 -- ----------------------------------------------------------------------
 
-CREATE TABLE IF NOT EXISTS dyno_form.field_def_option (
+CREATE TABLE IF NOT EXISTS schema_composition.field_def_option (
     -- Composite identity: options are tenant-scoped and belong to a field.
     tenant_id UUID NOT NULL,
     field_def_id UUID NOT NULL,
@@ -647,7 +647,7 @@ CREATE TABLE IF NOT EXISTS dyno_form.field_def_option (
     -- Tenant-safe FK back to the field definition.
     CONSTRAINT fk_field_def_option_field_def
         FOREIGN KEY (tenant_id, field_def_id)
-        REFERENCES dyno_form.field_def (tenant_id, id)
+        REFERENCES schema_composition.field_def (tenant_id, id)
         ON DELETE CASCADE
         DEFERRABLE INITIALLY DEFERRED,
 
@@ -666,15 +666,15 @@ CREATE TABLE IF NOT EXISTS dyno_form.field_def_option (
 
 -- Ensure option_order is unique within a field definition (stable ordering).
 CREATE UNIQUE INDEX IF NOT EXISTS ux_field_def_option_order
-    ON dyno_form.field_def_option (tenant_id, field_def_id, option_order);
+    ON schema_composition.field_def_option (tenant_id, field_def_id, option_order);
 
 -- Optional: look up by display value (useful for admin search, rarely needed).
 CREATE INDEX IF NOT EXISTS ix_field_def_option_label
-    ON dyno_form.field_def_option (tenant_id, lower(option_label));
+    ON schema_composition.field_def_option (tenant_id, lower(option_label));
 
 
 -- ----------------------------------------------------------------------
--- Table: dyno_form.component
+-- Table: schema_composition.component
 -- ----------------------------------------------------------------------
 -- PURPOSE
 --   Represents a reusable, catalog-style "component" that can be added to a form panel.
@@ -708,7 +708,7 @@ CREATE INDEX IF NOT EXISTS ix_field_def_option_label
 --   - updated_at is maintained by application code or a DB trigger (not included here).
 -- ----------------------------------------------------------------------
 
-CREATE TABLE IF NOT EXISTS dyno_form.component (
+CREATE TABLE IF NOT EXISTS schema_composition.component (
     -- ------------------------------------------------------------------
     -- Primary identity
     -- ------------------------------------------------------------------
@@ -770,7 +770,7 @@ CREATE TABLE IF NOT EXISTS dyno_form.component (
     archived_at TIMESTAMPTZ,
 
 
-    source_type dyno_form.artifact_source_type,
+    source_type schema_composition.artifact_source_type,
     source_package_key VARCHAR(400),
     source_artifact_key VARCHAR(400),
     source_artifact_version VARCHAR(100),
@@ -808,10 +808,10 @@ CREATE TABLE IF NOT EXISTS dyno_form.component (
         CHECK (length(btrim(name)) > 0),
 
     -- Tenant-safe FK to builder palette category.
-    -- Requires a UNIQUE/PK on dyno_form.form_catalog_category(tenant_id, id) or equivalent.
+    -- Requires a UNIQUE/PK on schema_composition.form_catalog_category(tenant_id, id) or equivalent.
     CONSTRAINT fk_component_category_tenant
         FOREIGN KEY (tenant_id, category_id)
-        REFERENCES dyno_form.form_catalog_category (tenant_id, id)
+        REFERENCES schema_composition.form_catalog_category (tenant_id, id)
         ON DELETE SET NULL,
 
     -- Publishing timestamp must align with the published flag.
@@ -843,10 +843,10 @@ CREATE TABLE IF NOT EXISTS dyno_form.component (
 );
 
 CREATE INDEX IF NOT EXISTS ix_component_tenant_source_type
-    ON dyno_form.component (tenant_id, source_type);
+    ON schema_composition.component (tenant_id, source_type);
 
 CREATE INDEX IF NOT EXISTS ix_component_tenant_source_keys
-    ON dyno_form.component (tenant_id, source_package_key, source_artifact_key, source_artifact_version);
+    ON schema_composition.component (tenant_id, source_package_key, source_artifact_key, source_artifact_version);
 
 -- ----------------------------------------------------------------------
 -- Indexes
@@ -861,108 +861,108 @@ CREATE INDEX IF NOT EXISTS ix_component_tenant_source_keys
 
 -- Builder palette filtering: list components by tenant and category.
 CREATE INDEX IF NOT EXISTS ix_component_tenant_category
-    ON dyno_form.component (tenant_id, category_id);
+    ON schema_composition.component (tenant_id, category_id);
 
 -- Browse/search by name within tenant (supports prefix/ordering use cases).
 CREATE INDEX IF NOT EXISTS ix_component_tenant_name
-    ON dyno_form.component (tenant_id, name);
+    ON schema_composition.component (tenant_id, name);
 
 -- Supports "catalog" listing filters quickly (tenant + lifecycle flags).
 CREATE INDEX IF NOT EXISTS ix_component_tenant_catalog_state
-    ON dyno_form.component (tenant_id, is_published, is_archived);
+    ON schema_composition.component (tenant_id, is_published, is_archived);
 
 -- Optional: search within category by name in builder UI.
 CREATE INDEX IF NOT EXISTS ix_component_tenant_category_name
-    ON dyno_form.component (tenant_id, category_id, name)
+    ON schema_composition.component (tenant_id, category_id, name)
     WHERE category_id IS NOT NULL;
 
 -- ----------------------------------------------------------------------
 -- Column Comments
 -- ----------------------------------------------------------------------
 
-COMMENT ON TABLE dyno_form.component IS
+COMMENT ON TABLE schema_composition.component IS
 'Reusable, tenant-scoped form component. Supports provider/marketplace seeding and tenant-defined components. Includes stable keys, versioning, optional builder category assignment, UI config, publish/archive lifecycle, and audit fields.';
 
-COMMENT ON COLUMN dyno_form.component.id IS
+COMMENT ON COLUMN schema_composition.component.id IS
 'Primary row identifier (UUID). Immutable technical identity.';
 
-COMMENT ON COLUMN dyno_form.component.tenant_id IS
+COMMENT ON COLUMN schema_composition.component.tenant_id IS
 'Tenant boundary. All component rows are scoped to a tenant for isolation and access control.';
 
-COMMENT ON COLUMN dyno_form.component.component_business_key IS
+COMMENT ON COLUMN schema_composition.component.component_business_key IS
 'Stable catalog/business identifier for the conceptual component. Used with component_version to represent versioned releases of the same component within a tenant (and across tenants via marketplace import).';
 
-COMMENT ON COLUMN dyno_form.component.component_version IS
+COMMENT ON COLUMN schema_composition.component.component_version IS
 'Version number for a given (tenant_id, component_business_key). Starts at 1 and increments for new releases.';
 
-COMMENT ON COLUMN dyno_form.component.name IS
+COMMENT ON COLUMN schema_composition.component.name IS
 'Human-readable name used in admin/catalog UI. Not required to be unique.';
 
-COMMENT ON COLUMN dyno_form.component.description IS
+COMMENT ON COLUMN schema_composition.component.description IS
 'Optional human-readable description for admin/catalog UI.';
 
-COMMENT ON COLUMN dyno_form.component.component_key IS
+COMMENT ON COLUMN schema_composition.component.component_key IS
 'Stable tenant-scoped key used by APIs, automations, and references from other tables. Unique within tenant.';
 
-COMMENT ON COLUMN dyno_form.component.component_label IS
+COMMENT ON COLUMN schema_composition.component.component_label IS
 'Human-readable label shown in end-user UI. Optional; some components may not render a label.';
 
-COMMENT ON COLUMN dyno_form.component.category_id IS
-'Optional reference to dyno_form.form_catalog_category for grouping components in the builder palette UI (accordion/categories). Tenant-local classification only.';
+COMMENT ON COLUMN schema_composition.component.category_id IS
+'Optional reference to schema_composition.form_catalog_category for grouping components in the builder palette UI (accordion/categories). Tenant-local classification only.';
 
-COMMENT ON COLUMN dyno_form.component.ui_config IS
+COMMENT ON COLUMN schema_composition.component.ui_config IS
 'JSONB configuration for UI hints and behavior (rendering options, help text, action config, etc.).';
 
-COMMENT ON COLUMN dyno_form.component.is_published IS
+COMMENT ON COLUMN schema_composition.component.is_published IS
 'When true, component is available for selection/use in catalog surfaces. When false, it is hidden/unavailable (but may still exist for history).';
 
-COMMENT ON COLUMN dyno_form.component.published_at IS
+COMMENT ON COLUMN schema_composition.component.published_at IS
 'Timestamp when the component was published. Must be non-null only when is_published is true.';
 
-COMMENT ON COLUMN dyno_form.component.is_archived IS
+COMMENT ON COLUMN schema_composition.component.is_archived IS
 'When true, component is archived (retained for history/back-compat but not actively offered).';
 
-COMMENT ON COLUMN dyno_form.component.archived_at IS
+COMMENT ON COLUMN schema_composition.component.archived_at IS
 'Timestamp when the component was archived. Must be non-null only when is_archived is true.';
 
-COMMENT ON COLUMN dyno_form.component.source_type IS
+COMMENT ON COLUMN schema_composition.component.source_type IS
     'Provenance classification of the artifact installation. Allowed values: MARKETPLACE, PROVIDER, TENANT, SYSTEM.';
 
-COMMENT ON COLUMN dyno_form.component.source_package_key IS
+COMMENT ON COLUMN schema_composition.component.source_package_key IS
     'Key identifying the package from which this component artifact originated (e.g., marketplace or provider package).';
 
-COMMENT ON COLUMN dyno_form.component.source_artifact_key IS
+COMMENT ON COLUMN schema_composition.component.source_artifact_key IS
     'Key identifying the specific artifact within the source package.';
 
-COMMENT ON COLUMN dyno_form.component.source_artifact_version IS
+COMMENT ON COLUMN schema_composition.component.source_artifact_version IS
     'Version string of the source artifact from which this component was installed.';
 
-COMMENT ON COLUMN dyno_form.component.source_checksum IS
+COMMENT ON COLUMN schema_composition.component.source_checksum IS
     'SHA-256 checksum (64 hex characters) of the source artifact at install time. Used to detect source changes and upgrade eligibility.';
 
-COMMENT ON COLUMN dyno_form.component.installed_at IS
+COMMENT ON COLUMN schema_composition.component.installed_at IS
     'Timestamp when this component artifact was installed for the tenant.';
 
-COMMENT ON COLUMN dyno_form.component.installed_by IS
+COMMENT ON COLUMN schema_composition.component.installed_by IS
     'Actor (username/service) that installed this component artifact.';
     
 
-COMMENT ON COLUMN dyno_form.component.created_at IS
+COMMENT ON COLUMN schema_composition.component.created_at IS
 'Row creation timestamp.';
 
-COMMENT ON COLUMN dyno_form.component.updated_at IS
+COMMENT ON COLUMN schema_composition.component.updated_at IS
 'Row last-updated timestamp. Typically maintained by application code or a trigger.';
 
-COMMENT ON COLUMN dyno_form.component.created_by IS
+COMMENT ON COLUMN schema_composition.component.created_by IS
 'Optional actor identifier (username/service) that created the row.';
 
-COMMENT ON COLUMN dyno_form.component.updated_by IS
+COMMENT ON COLUMN schema_composition.component.updated_by IS
 'Optional actor identifier (username/service) that last updated the row.';
 
 
 
 -- ----------------------------------------------------------------------
--- Table: dyno_form.component_panel
+-- Table: schema_composition.component_panel
 -- ----------------------------------------------------------------------
 -- PURPOSE
 --   Defines a panel within a reusable component.
@@ -993,7 +993,7 @@ COMMENT ON COLUMN dyno_form.component.updated_by IS
 --   - updated_at is maintained by application code or a DB trigger (not included here).
 -- ----------------------------------------------------------------------
 
-CREATE TABLE IF NOT EXISTS dyno_form.component_panel (
+CREATE TABLE IF NOT EXISTS schema_composition.component_panel (
     -- ------------------------------------------------------------------
     -- Primary identity
     -- ------------------------------------------------------------------
@@ -1093,7 +1093,7 @@ CREATE TABLE IF NOT EXISTS dyno_form.component_panel (
     -- simplification or micro-optimizations.
     CONSTRAINT fk_component_panel_parent_panel_tenant_component 
         FOREIGN KEY (tenant_id, component_id, parent_panel_id)
-        REFERENCES dyno_form.component_panel (tenant_id, component_id, id)
+        REFERENCES schema_composition.component_panel (tenant_id, component_id, id)
         ON DELETE CASCADE,
 
     -- Defensive: prevent empty/whitespace-only keys.
@@ -1117,11 +1117,11 @@ CREATE TABLE IF NOT EXISTS dyno_form.component_panel (
     -- ------------------------------------------------------------------
 
     -- Tenant-safe FK: forces component_id to belong to same tenant_id.
-    -- Requires a UNIQUE/PK on dyno_form.component(tenant_id, id) or equivalent.
+    -- Requires a UNIQUE/PK on schema_composition.component(tenant_id, id) or equivalent.
     CONSTRAINT fk_component_panel_component_tenant
         FOREIGN KEY (tenant_id, component_id)
-        REFERENCES dyno_form.component (tenant_id, id)
-        ON DELETE CASCADE,
+        REFERENCES schema_composition.component (tenant_id, id)
+        ON DELETE CASCADE
 );
 
 -- ----------------------------------------------------------------------
@@ -1135,59 +1135,59 @@ CREATE TABLE IF NOT EXISTS dyno_form.component_panel (
 
 -- Fetch children by parent quickly (tree traversal).
 CREATE INDEX IF NOT EXISTS ix_component_panel_parent
-    ON dyno_form.component_panel (tenant_id, component_id, parent_panel_id);
+    ON schema_composition.component_panel (tenant_id, component_id, parent_panel_id);
 
 
 -- Optional but useful when ordering/recency queries exist.
 CREATE INDEX IF NOT EXISTS ix_component_panel_tenant_component_updated_at
-    ON dyno_form.component_panel (tenant_id, component_id, updated_at);
+    ON schema_composition.component_panel (tenant_id, component_id, updated_at);
 
 -- ----------------------------------------------------------------------
 -- Comments
 -- ----------------------------------------------------------------------
 
-COMMENT ON TABLE dyno_form.component_panel IS
+COMMENT ON TABLE schema_composition.component_panel IS
 'Panel within a reusable component. Panels are hierarchical (parent_panel_id) and group fields or nested panels. Includes declarative panel-level interaction rules via panel_actions. Tenant-scoped and component-scoped with tenant-safe foreign keys.';
 
-COMMENT ON COLUMN dyno_form.component_panel.id IS
+COMMENT ON COLUMN schema_composition.component_panel.id IS
 'Primary row identifier (UUID). Immutable technical identity.';
 
-COMMENT ON COLUMN dyno_form.component_panel.tenant_id IS
+COMMENT ON COLUMN schema_composition.component_panel.tenant_id IS
 'Tenant boundary. All panel rows are scoped to a tenant for isolation and access control.';
 
-COMMENT ON COLUMN dyno_form.component_panel.component_id IS
+COMMENT ON COLUMN schema_composition.component_panel.component_id IS
 'Owning component ID. Panel belongs to exactly one component.';
 
-COMMENT ON COLUMN dyno_form.component_panel.parent_panel_id IS
+COMMENT ON COLUMN schema_composition.component_panel.parent_panel_id IS
 'Optional parent panel ID for nesting. NULL indicates a root panel within the component. Parent must be in the same tenant and component.';
 
-COMMENT ON COLUMN dyno_form.component_panel.panel_key IS
+COMMENT ON COLUMN schema_composition.component_panel.panel_key IS
 'Stable identifier for this panel within (tenant_id, component_id). Used by APIs/templates and for deterministic lookup.';
 
-COMMENT ON COLUMN dyno_form.component_panel.panel_label IS
+COMMENT ON COLUMN schema_composition.component_panel.panel_label IS
 'Human-readable label shown in UI. Optional.';
 
-COMMENT ON COLUMN dyno_form.component_panel.ui_config IS
+COMMENT ON COLUMN schema_composition.component_panel.ui_config IS
 'JSONB UI configuration for layout, styling, and container-level rendering hints.';
 
-COMMENT ON COLUMN dyno_form.component_panel.panel_actions IS
+COMMENT ON COLUMN schema_composition.component_panel.panel_actions IS
 'JSONB declarative interaction rules that define how fields, panels, and component variants within this panel react to user input and state changes.';
 
-COMMENT ON COLUMN dyno_form.component_panel.created_at IS
+COMMENT ON COLUMN schema_composition.component_panel.created_at IS
 'Row creation timestamp.';
 
-COMMENT ON COLUMN dyno_form.component_panel.updated_at IS
+COMMENT ON COLUMN schema_composition.component_panel.updated_at IS
 'Row last-updated timestamp. Typically maintained by application code or a trigger.';
 
-COMMENT ON COLUMN dyno_form.component_panel.created_by IS
+COMMENT ON COLUMN schema_composition.component_panel.created_by IS
 'Optional actor identifier (username/service) that created the row.';
 
-COMMENT ON COLUMN dyno_form.component_panel.updated_by IS
+COMMENT ON COLUMN schema_composition.component_panel.updated_by IS
 'Optional actor identifier (username/service) that last updated the row.';
 
 
 -- ----------------------------------------------------------------------
--- Table: dyno_form.component_panel_field
+-- Table: schema_composition.component_panel_field
 -- ----------------------------------------------------------------------
 -- PURPOSE
 --   Defines the placement of a reusable field definition (field_def) onto a
@@ -1229,7 +1229,7 @@ COMMENT ON COLUMN dyno_form.component_panel.updated_by IS
 --   - Hash columns are typically maintained by application logic or triggers.
 -- ----------------------------------------------------------------------
 
-CREATE TABLE IF NOT EXISTS dyno_form.component_panel_field (
+CREATE TABLE IF NOT EXISTS schema_composition.component_panel_field (
     -- ------------------------------------------------------------------
     -- Primary identity
     -- ------------------------------------------------------------------
@@ -1318,7 +1318,6 @@ CREATE TABLE IF NOT EXISTS dyno_form.component_panel_field (
     CONSTRAINT ck_component_panel_field_field_config_schema
         CHECK (
             public.jsonb_matches_schema(
-                field_config,
                 $${
                   "$schema": "http://json-schema.org/draft-07/schema#",
                   "title": "DynoCRM Component Panel Field Config",
@@ -1373,7 +1372,8 @@ CREATE TABLE IF NOT EXISTS dyno_form.component_panel_field (
                       }
                     }
                   }
-                }$$::jsonb
+                }$$::json,
+                field_config
             )
         ),
 
@@ -1382,15 +1382,15 @@ CREATE TABLE IF NOT EXISTS dyno_form.component_panel_field (
     -- ------------------------------------------------------------------
 
     -- Tenant-safe: forces panel_id to belong to same tenant_id.
-    -- Requires a UNIQUE/PK on dyno_form.component_panel(tenant_id, id) or equivalent.
+    -- Requires a UNIQUE/PK on schema_composition.component_panel(tenant_id, id) or equivalent.
     CONSTRAINT fk_component_panel_field_panel_tenant
         FOREIGN KEY (tenant_id, panel_id)
-        REFERENCES dyno_form.component_panel (tenant_id, id)
+        REFERENCES schema_composition.component_panel (tenant_id, id)
         ON DELETE CASCADE,
 
     CONSTRAINT fk_component_panel_field_field_def_tenant
         FOREIGN KEY (tenant_id, field_def_id)
-        REFERENCES dyno_form.field_def (tenant_id, id)
+        REFERENCES schema_composition.field_def (tenant_id, id)
         ON DELETE RESTRICT
 );
 
@@ -1406,73 +1406,63 @@ CREATE TABLE IF NOT EXISTS dyno_form.component_panel_field (
 
 -- Fast joins to field_def (when rendering / reset provenance).
 CREATE INDEX IF NOT EXISTS ix_component_panel_field_field_def
-    ON dyno_form.component_panel_field (tenant_id, field_def_id);
-
--- Optional: JSONB search/filtering on ui_config traits.
-CREATE INDEX IF NOT EXISTS ix_component_panel_field_ui_config_gin
-    ON dyno_form.component_panel_field
-    USING GIN (ui_config);
-
--- Optional: JSONB search/filtering on field_config traits (debugging, analysis, admin tools).
-CREATE INDEX IF NOT EXISTS ix_component_panel_field_field_config_gin
-    ON dyno_form.component_panel_field
-    USING GIN (field_config);
+    ON schema_composition.component_panel_field (tenant_id, field_def_id);
 
 -- Optional: useful for recency queries and debugging.
 CREATE INDEX IF NOT EXISTS ix_component_panel_field_tenant_panel_updated_at
-    ON dyno_form.component_panel_field (tenant_id, panel_id, updated_at);
+    ON schema_composition.component_panel_field (tenant_id, panel_id, updated_at);
 
 -- Optional: accelerate "is overridden" checks via hash comparisons.
 CREATE INDEX IF NOT EXISTS ix_component_panel_field_hashes
-    ON dyno_form.component_panel_field (tenant_id, field_config_hash, source_field_def_hash);
+    ON schema_composition.component_panel_field (tenant_id, field_config_hash, source_field_def_hash);
 
 -- ----------------------------------------------------------------------
 -- Comments
 -- ----------------------------------------------------------------------
 
-COMMENT ON TABLE dyno_form.component_panel_field IS
+COMMENT ON TABLE schema_composition.component_panel_field IS
 'Places a reusable field_def onto a specific component panel. Controls per-panel ordering and supports per-placement UI configuration overrides. Stores an imprinted, editable field_config snapshot (field_def + options) with schema enforcement and hashes for diff/reset workflows.';
 
-COMMENT ON COLUMN dyno_form.component_panel_field.id IS
+COMMENT ON COLUMN schema_composition.component_panel_field.id IS
 'Primary row identifier (UUID). Immutable technical identity.';
 
-COMMENT ON COLUMN dyno_form.component_panel_field.tenant_id IS
+COMMENT ON COLUMN schema_composition.component_panel_field.tenant_id IS
 'Tenant boundary. All rows are scoped to a tenant for isolation and access control.';
 
-COMMENT ON COLUMN dyno_form.component_panel_field.panel_id IS
+COMMENT ON COLUMN schema_composition.component_panel_field.panel_id IS
 'Owning component panel ID. The panel that this field placement belongs to.';
 
-COMMENT ON COLUMN dyno_form.component_panel_field.field_def_id IS
+COMMENT ON COLUMN schema_composition.component_panel_field.field_def_id IS
 'Source catalog field definition ID (field_def). Used for provenance and reset/re-imprint. The effective field definition for this placement lives in field_config.';
 
-COMMENT ON COLUMN dyno_form.component_panel_field.field_order IS
+COMMENT ON COLUMN schema_composition.component_panel_field.field_order IS
 'Default display/tab order within the panel. Null means unspecified; otherwise non-negative and unique within (tenant_id, panel_id) when present.';
 
-COMMENT ON COLUMN dyno_form.component_panel_field.ui_config IS
+COMMENT ON COLUMN schema_composition.component_panel_field.ui_config IS
 'JSONB UI configuration overrides applied on top of the field_config.ui_config for this specific panel placement (layout/display hints).';
 
-COMMENT ON COLUMN dyno_form.component_panel_field.field_config IS
+COMMENT ON COLUMN schema_composition.component_panel_field.field_config IS
 'Imprinted JSONB snapshot of the effective field definition for this placement, including option definitions for select/multiselect. Editable without mutating the source field_def. Enforced by jsonb_matches_schema.';
 
-COMMENT ON COLUMN dyno_form.component_panel_field.field_config_hash IS
+COMMENT ON COLUMN schema_composition.component_panel_field.field_config_hash IS
 'Hash (typically sha256 hex) of the current field_config JSONB. Used to detect edits and support diff workflows efficiently.';
 
-COMMENT ON COLUMN dyno_form.component_panel_field.source_field_def_hash IS
+COMMENT ON COLUMN schema_composition.component_panel_field.source_field_def_hash IS
 'Hash (typically sha256 hex) of the canonical source snapshot from field_def + field_def_option at the time field_config was last imprinted. Used to detect catalog drift since imprint.';
 
-COMMENT ON COLUMN dyno_form.component_panel_field.last_imprinted_at IS
+COMMENT ON COLUMN schema_composition.component_panel_field.last_imprinted_at IS
 'Timestamp of the last imprint operation that copied the catalog source definition into field_config.';
 
-COMMENT ON COLUMN dyno_form.component_panel_field.created_at IS
+COMMENT ON COLUMN schema_composition.component_panel_field.created_at IS
 'Row creation timestamp.';
 
-COMMENT ON COLUMN dyno_form.component_panel_field.updated_at IS
+COMMENT ON COLUMN schema_composition.component_panel_field.updated_at IS
 'Row last-updated timestamp. Typically maintained by application code or a trigger.';
 
-COMMENT ON COLUMN dyno_form.component_panel_field.created_by IS
+COMMENT ON COLUMN schema_composition.component_panel_field.created_by IS
 'Optional actor identifier (username/service) that created the row.';
 
-COMMENT ON COLUMN dyno_form.component_panel_field.updated_by IS
+COMMENT ON COLUMN schema_composition.component_panel_field.updated_by IS
 'Optional actor identifier (username/service) that last updated the row.';
 
 
@@ -1482,7 +1472,7 @@ COMMENT ON COLUMN dyno_form.component_panel_field.updated_by IS
 
 
 -- ----------------------------------------------------------------------
--- Table: dyno_form.form
+-- Table: schema_composition.form
 -- ----------------------------------------------------------------------
 -- PURPOSE
 --   Defines an actual form definition for a tenant.
@@ -1515,7 +1505,7 @@ COMMENT ON COLUMN dyno_form.component_panel_field.updated_by IS
 --   - updated_at is maintained by application code or a DB trigger (not included here).
 -- ----------------------------------------------------------------------
 
-CREATE TABLE IF NOT EXISTS dyno_form.form (
+CREATE TABLE IF NOT EXISTS schema_composition.form (
     -- ------------------------------------------------------------------
     -- Primary identity
     -- ------------------------------------------------------------------
@@ -1554,7 +1544,7 @@ CREATE TABLE IF NOT EXISTS dyno_form.form (
     archived_at TIMESTAMPTZ,
 
 
-    source_type dyno_form.artifact_source_type,
+    source_type schema_composition.artifact_source_type,
     source_package_key VARCHAR(400),
     source_artifact_key VARCHAR(400),
     source_artifact_version VARCHAR(100),
@@ -1622,96 +1612,96 @@ CREATE TABLE IF NOT EXISTS dyno_form.form (
 
 -- Uniqueness: one name per tenant (builder UI friendly).
 CREATE UNIQUE INDEX IF NOT EXISTS ux_form_tenant_name
-    ON dyno_form.form (tenant_id, name);
+    ON schema_composition.form (tenant_id, name);
 
 -- Catalog listing filters (published / archived).
 CREATE INDEX IF NOT EXISTS ix_form_tenant_catalog_state
-    ON dyno_form.form (tenant_id, is_published, is_archived);
+    ON schema_composition.form (tenant_id, is_published, is_archived);
 
 -- Optional: case-insensitive search by name.
 CREATE INDEX IF NOT EXISTS ix_form_tenant_name_lower
-    ON dyno_form.form (tenant_id, lower(name));
+    ON schema_composition.form (tenant_id, lower(name));
 
 CREATE INDEX IF NOT EXISTS ix_form_tenant_source_type
-    ON dyno_form.form (tenant_id, source_type);
+    ON schema_composition.form (tenant_id, source_type);
 
 CREATE INDEX IF NOT EXISTS ix_form_tenant_source_keys
-    ON dyno_form.form (tenant_id, source_package_key, source_artifact_key, source_artifact_version);
+    ON schema_composition.form (tenant_id, source_package_key, source_artifact_key, source_artifact_version);
 
 -- ----------------------------------------------------------------------
 -- Comments
 -- ----------------------------------------------------------------------
 
-COMMENT ON TABLE dyno_form.form IS
+COMMENT ON TABLE schema_composition.form IS
 'Actual tenant-scoped form definition (non-reusable). Uses a versioned business identity (form_business_key + form_version) and lifecycle flags to control availability for new submissions while retaining older versions for history/back-compat.';
 
-COMMENT ON COLUMN dyno_form.form.id IS
+COMMENT ON COLUMN schema_composition.form.id IS
 'Primary row identifier (UUID). Immutable technical identity.';
 
-COMMENT ON COLUMN dyno_form.form.tenant_id IS
+COMMENT ON COLUMN schema_composition.form.tenant_id IS
 'Tenant boundary. All form rows are scoped to a tenant for isolation and access control.';
 
-COMMENT ON COLUMN dyno_form.form.form_business_key IS
+COMMENT ON COLUMN schema_composition.form.form_business_key IS
 'Stable business identifier for the conceptual form across versions within a tenant. Used for version lineage and import/export.';
 
-COMMENT ON COLUMN dyno_form.form.form_version IS
+COMMENT ON COLUMN schema_composition.form.form_version IS
 'Version number for a given (tenant_id, form_business_key). Starts at 1 and increments for new versions.';
 
-COMMENT ON COLUMN dyno_form.form.name IS
+COMMENT ON COLUMN schema_composition.form.name IS
 'Human-readable name shown in builder/admin UI. Unique within a tenant.';
 
-COMMENT ON COLUMN dyno_form.form.description IS
+COMMENT ON COLUMN schema_composition.form.description IS
 'Optional human-readable description for builder/admin UI.';
 
-COMMENT ON COLUMN dyno_form.form.is_published IS
+COMMENT ON COLUMN schema_composition.form.is_published IS
 'When true, the form is available for selection and new submissions. When false, it is hidden/unavailable for new use.';
 
-COMMENT ON COLUMN dyno_form.form.published_at IS
+COMMENT ON COLUMN schema_composition.form.published_at IS
 'Timestamp when the form was published. Must be non-null only when is_published is true.';
 
-COMMENT ON COLUMN dyno_form.form.is_archived IS
+COMMENT ON COLUMN schema_composition.form.is_archived IS
 'When true, the form is archived (retained for history/back-compat but not actively offered).';
 
-COMMENT ON COLUMN dyno_form.form.archived_at IS
+COMMENT ON COLUMN schema_composition.form.archived_at IS
 'Timestamp when the form was archived. Must be non-null only when is_archived is true.';
 
-COMMENT ON COLUMN dyno_form.form.source_type IS
+COMMENT ON COLUMN schema_composition.form.source_type IS
     'Provenance classification of the artifact installation. Allowed values: MARKETPLACE, PROVIDER, TENANT, SYSTEM.';
 
-COMMENT ON COLUMN dyno_form.form.source_package_key IS
+COMMENT ON COLUMN schema_composition.form.source_package_key IS
     'Key identifying the package from which this form artifact originated (e.g., marketplace or provider package).';
 
-COMMENT ON COLUMN dyno_form.form.source_artifact_key IS
+COMMENT ON COLUMN schema_composition.form.source_artifact_key IS
     'Key identifying the specific artifact within the source package.';
 
-COMMENT ON COLUMN dyno_form.form.source_artifact_version IS
+COMMENT ON COLUMN schema_composition.form.source_artifact_version IS
     'Version string of the source artifact from which this form was installed.';
 
-COMMENT ON COLUMN dyno_form.form.source_checksum IS
+COMMENT ON COLUMN schema_composition.form.source_checksum IS
     'SHA-256 checksum (64 hex characters) of the source artifact at install time. Used to detect source changes and upgrade eligibility.';
 
-COMMENT ON COLUMN dyno_form.form.installed_at IS
+COMMENT ON COLUMN schema_composition.form.installed_at IS
     'Timestamp when this form artifact was installed for the tenant.';
 
-COMMENT ON COLUMN dyno_form.form.installed_by IS
+COMMENT ON COLUMN schema_composition.form.installed_by IS
     'Actor (username/service) that installed this form artifact.';
 
-COMMENT ON COLUMN dyno_form.form.created_at IS
+COMMENT ON COLUMN schema_composition.form.created_at IS
 'Row creation timestamp.';
 
-COMMENT ON COLUMN dyno_form.form.updated_at IS
+COMMENT ON COLUMN schema_composition.form.updated_at IS
 'Row last-updated timestamp. Typically maintained by application code or a trigger.';
 
-COMMENT ON COLUMN dyno_form.form.created_by IS
+COMMENT ON COLUMN schema_composition.form.created_by IS
 'Optional actor identifier (username/service) that created the row.';
 
-COMMENT ON COLUMN dyno_form.form.updated_by IS
+COMMENT ON COLUMN schema_composition.form.updated_by IS
 'Optional actor identifier (username/service) that last updated the row.';
 
 
 
 -- ----------------------------------------------------------------------
--- Table: dyno_form.form_panel
+-- Table: schema_composition.form_panel
 -- ----------------------------------------------------------------------
 -- PURPOSE
 --   Defines a panel within an actual form definition.
@@ -1720,14 +1710,9 @@ COMMENT ON COLUMN dyno_form.form.updated_by IS
 --   in the "form composition" domain (non-reusable instance definition) and it
 --   is the primary location where embedded components can be customized without
 --   modifying the underlying catalog tables:
---     - dyno_form.component
---     - dyno_form.component_panel
---     - dyno_form.component_panel_field
---
---   The customization mechanism is nested_overrides, which applies PATCH-style
---   overrides to nested panel_config and field_config inside embedded components.
---   This allows a form to tailor a reused component (labels, validation, options,
---   ui hints, panel_actions, etc.) while keeping the catalog component intact.
+--     - schema_composition.component
+--     - schema_composition.component_panel
+--     - schema_composition.component_panel_field
 --
 -- CORE CONCEPTS
 --   - Stable identity:
@@ -1735,21 +1720,15 @@ COMMENT ON COLUMN dyno_form.form.updated_by IS
 --       panel_label is the user-facing label shown in UI.
 --   - Layout configuration:
 --       ui_config contains layout and rendering hints for the panel container.
---   - Embedded component customization:
---       nested_overrides contains selector-addressed patches that apply to:
---         * field_config of component_panel_field nodes
---         * panel_config of component_panel nodes
---       Overrides are always PATCH semantics (no REPLACE mode).
 --
 -- IMPORTANT INVARIANTS
 --   - tenant_id scopes data to a tenant boundary.
 --   - form_id must belong to the same tenant_id (tenant-safe FK).
 --   - panel_key is unique per (tenant_id, form_id).
---   - nested_overrides must conform to the Nested Overrides JSON schema.
 --   - updated_at is maintained by application code or a DB trigger (not included here).
 -- ----------------------------------------------------------------------
 
-CREATE TABLE IF NOT EXISTS dyno_form.form_panel (
+CREATE TABLE IF NOT EXISTS schema_composition.form_panel (
     -- ------------------------------------------------------------------
     -- Primary identity
     -- ------------------------------------------------------------------
@@ -1773,6 +1752,434 @@ CREATE TABLE IF NOT EXISTS dyno_form.form_panel (
     -- Optional JSON UI configuration (layout/styling/container hints).
     -- Examples:
     --   { "layout": "two_column", "css": {"gap": "12px"}, "collapsible": true }
+    ui_config JSONB,
+
+    -- ------------------------------------------------------------------
+    -- Audit columns
+    -- ------------------------------------------------------------------
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    created_by VARCHAR(100),
+    updated_by VARCHAR(100),
+
+    -- ------------------------------------------------------------------
+    -- Constraints
+    -- ------------------------------------------------------------------
+
+    -- Supports tenant-safe composite foreign keys from child tables.
+    CONSTRAINT ux_form_panel_tenant_id
+        UNIQUE (tenant_id, id),
+
+    -- Defensive: prevent empty/whitespace-only keys.
+    CONSTRAINT ck_form_panel_key_nonblank
+        CHECK (length(btrim(panel_key)) > 0),
+
+    -- Defensive: prevent empty/whitespace-only label if provided.
+    CONSTRAINT ck_form_panel_label_nonblank
+        CHECK (panel_label IS NULL OR length(btrim(panel_label)) > 0),
+
+    -- Stable identity within a form.
+    CONSTRAINT uq_form_panel_tenant_form_panel_key
+        UNIQUE (tenant_id, form_id, panel_key),
+
+    -- ------------------------------------------------------------------
+    -- Foreign keys (tenant-safe)
+    -- ------------------------------------------------------------------
+
+    -- Tenant-safe FK: forces form_id to belong to same tenant_id.
+    -- Requires a UNIQUE/PK on schema_composition.form(tenant_id, id) or equivalent.
+    CONSTRAINT fk_form_panel_form_tenant
+        FOREIGN KEY (tenant_id, form_id)
+        REFERENCES schema_composition.form (tenant_id, id)
+        ON DELETE CASCADE
+);
+
+-- ----------------------------------------------------------------------
+-- Indexes
+-- ----------------------------------------------------------------------
+-- Common access patterns:
+--   - list panels for a form
+--   - resolve a panel by (tenant_id, form_id, panel_key)
+-- ----------------------------------------------------------------------
+
+-- Load all panels for a form efficiently.
+CREATE INDEX IF NOT EXISTS ix_form_panel_tenant_form
+    ON schema_composition.form_panel (tenant_id, form_id);
+
+-- Optional: useful for recency queries and debugging.
+CREATE INDEX IF NOT EXISTS ix_form_panel_tenant_form_updated_at
+    ON schema_composition.form_panel (tenant_id, form_id, updated_at);
+
+-- ----------------------------------------------------------------------
+-- Comments
+-- ----------------------------------------------------------------------
+
+COMMENT ON TABLE schema_composition.form_panel IS
+'Panel within an actual form definition. Similar to component_panel but used for form composition.';
+
+COMMENT ON COLUMN schema_composition.form_panel.id IS
+'Primary row identifier (UUID). Immutable technical identity.';
+
+COMMENT ON COLUMN schema_composition.form_panel.tenant_id IS
+'Tenant boundary. All form panels are scoped to a tenant for isolation and access control.';
+
+COMMENT ON COLUMN schema_composition.form_panel.form_id IS
+'Owning form ID. The form that this panel belongs to.';
+
+COMMENT ON COLUMN schema_composition.form_panel.panel_key IS
+'Stable identifier for this panel within (tenant_id, form_id). Used by builders/APIs for deterministic lookup.';
+
+COMMENT ON COLUMN schema_composition.form_panel.panel_label IS
+'Human-readable label shown in UI. Optional.';
+
+COMMENT ON COLUMN schema_composition.form_panel.ui_config IS
+'JSONB UI configuration for layout, styling, and container-level rendering hints for the form panel.';
+
+COMMENT ON COLUMN schema_composition.form_panel.created_at IS
+'Row creation timestamp.';
+
+COMMENT ON COLUMN schema_composition.form_panel.updated_at IS
+'Row last-updated timestamp. Typically maintained by application code or a trigger.';
+
+COMMENT ON COLUMN schema_composition.form_panel.created_by IS
+'Optional actor identifier (username/service) that created the row.';
+
+COMMENT ON COLUMN schema_composition.form_panel.updated_by IS
+'Optional actor identifier (username/service) that last updated the row.';
+
+
+
+-- ----------------------------------------------------------------------
+-- Table: schema_composition.form_panel_field
+-- ----------------------------------------------------------------------
+-- PURPOSE
+--   Defines a non-reusable field realization placed directly onto a form panel.
+--
+--   This table is intentionally very similar to schema_composition.component_panel_field,
+--   but it lives in the form domain (form definitions are not reusable like catalog
+--   components). A form_panel_field represents a concrete field instance as used
+--   by a specific form, with its own imprinted and editable field_config.
+--
+--   Key idea:
+--     - field_def_id is a provenance and reset source (optional conceptually),
+--       but the effective definition used by the form lives in field_config.
+--     - Editing the field inside a form updates field_config and does not mutate
+--       the catalog field_def.
+--
+-- CORE CONCEPTS
+--   - Composition (form_panel + field_def):
+--       A form panel contains zero or more fields. Each row represents one field
+--       instance placed on that panel, sourced from a catalog field_def.
+--   - Ordering:
+--       field_order controls default tab/display ordering within the form panel.
+--   - UI configuration overrides:
+--       field_config.field.ui_config is the imprinted base.
+--       form_panel_field.ui_config is an override/augmentation applied in the
+--       context of this specific placement.
+--   - Imprinting (field_config):
+--       field_config is a JSONB snapshot that can fully represent the effective
+--       field_def and its options at the time the field was placed on the form.
+--       Edits modify field_config, not field_def.
+--   - Hashing:
+--       * field_config_hash: hash of the current field_config JSONB (detect edits/diff).
+--       * source_field_def_hash: hash of the canonical source snapshot from field_def
+--         (field_def + field_def_option) at imprint time (detect catalog drift).
+--
+-- IMPORTANT INVARIANTS
+--   - tenant_id scopes data to a tenant boundary.
+--   - panel_id must belong to the same tenant_id (tenant-safe FK).
+--   - field_def_id must belong to the same tenant_id (tenant-safe FK).
+--   - A given (tenant_id, panel_id, field_def_id) is unique to prevent accidental
+--     duplicate placement of the same field_def on the same form panel.
+--   - field_order, when provided, must be >= 0.
+--   - field_config must conform to the JSON schema enforced by jsonb_matches_schema.
+--   - Hash columns are typically maintained by application logic or triggers.
+-- ----------------------------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS schema_composition.form_panel_field (
+    -- ------------------------------------------------------------------
+    -- Primary identity
+    -- ------------------------------------------------------------------
+    id UUID PRIMARY KEY,
+
+    -- ------------------------------------------------------------------
+    -- Tenant boundary and owning form panel
+    -- ------------------------------------------------------------------
+    tenant_id UUID NOT NULL,
+
+    -- The form panel this field belongs to.
+    panel_id UUID NOT NULL,
+
+    -- The catalog field definition used as the source for this field placement.
+    -- This is provenance and reset source. The effective definition used by the
+    -- form lives in field_config (imprinted snapshot).
+    field_def_id UUID NOT NULL,
+
+    -- Default display/tab order within the form panel.
+    -- Null means "unspecified" (UI/service may apply a default ordering strategy).
+    field_order INTEGER,
+
+    -- Optional UI overrides applied for this specific placement on the form panel.
+    -- This is layered on top of field_config.field.ui_config.
+    ui_config JSONB,
+
+    -- ------------------------------------------------------------------
+    -- Imprinted field definition snapshot
+    -- ------------------------------------------------------------------
+    -- JSONB snapshot representing the effective field definition and options for this
+    -- placement. This is the editable copy that can diverge from the catalog field_def.
+    --
+    -- The schema is enforced via public.jsonb_matches_schema(field_config, <schema>).
+    field_config JSONB NOT NULL,
+
+    -- Hash of the current field_config JSONB (typically sha256 hex, 64 chars).
+    -- Used to detect edits and support fast diff checks without deep JSON comparison.
+    field_config_hash VARCHAR(64),
+
+    -- Hash of the canonical source snapshot from field_def + field_def_option that was
+    -- used to imprint field_config initially (typically sha256 hex, 64 chars).
+    -- Used to detect when the catalog source changed since imprint (reset candidate).
+    source_field_def_hash VARCHAR(64),
+
+    -- Timestamp when field_config was last imprinted from the catalog source.
+    last_imprinted_at TIMESTAMPTZ,
+
+    -- ------------------------------------------------------------------
+    -- Audit columns
+    -- ------------------------------------------------------------------
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    created_by VARCHAR(100),
+    updated_by VARCHAR(100),
+
+    -- ------------------------------------------------------------------
+    -- Constraints
+    -- ------------------------------------------------------------------
+
+    -- Supports tenant-safe composite foreign keys from child tables.
+    CONSTRAINT ux_form_panel_field_tenant_id
+        UNIQUE (tenant_id, id),
+
+    -- Defensive: ordering, when provided, must be non-negative.
+    CONSTRAINT ck_form_panel_field_order_non_negative
+        CHECK (field_order IS NULL OR field_order >= 0),
+
+    -- Prevent duplicate placement of the same field_def on the same form panel.
+    CONSTRAINT uq_form_panel_field_panel_field_def
+        UNIQUE (tenant_id, panel_id, field_def_id),
+
+    -- Optional: enforce a single field_order value per panel when field_order is used.
+    -- This helps prevent "two fields share order 10" ambiguity.
+    -- (Allows multiple NULLs.)
+    CONSTRAINT uq_form_panel_field_panel_order
+        UNIQUE (tenant_id, panel_id, field_order),
+
+    -- Enforce hash formatting when provided (sha256 hex).
+    CONSTRAINT ck_form_panel_field_field_config_hash_format
+        CHECK (field_config_hash IS NULL OR field_config_hash ~ '^[0-9a-f]{64}$'),
+
+    CONSTRAINT ck_form_panel_field_source_field_def_hash_format
+        CHECK (source_field_def_hash IS NULL OR source_field_def_hash ~ '^[0-9a-f]{64}$'),
+
+    -- Enforce field_config JSON schema.
+    -- NOTE: This assumes public.jsonb_matches_schema(instance_jsonb, schema_jsonb) exists.
+    CONSTRAINT ck_form_panel_field_field_config_schema
+        CHECK (
+            public.jsonb_matches_schema(
+                $${
+                  "$schema": "http://json-schema.org/draft-07/schema#",
+                  "title": "DynoCRM Form Panel Field Config",
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["schema_version", "field"],
+                  "properties": {
+                    "schema_version": { "type": "integer", "minimum": 1 },
+
+                    "field": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["field_key", "label", "element_type"],
+                      "properties": {
+                        "field_def_business_key": { "type": "string", "minLength": 1, "maxLength": 400 },
+                        "field_def_version": { "type": "integer", "minimum": 1 },
+
+                        "name": { "type": "string", "minLength": 1, "maxLength": 100 },
+                        "description": { "type": ["string", "null"], "maxLength": 1000 },
+
+                        "field_key": { "type": "string", "minLength": 1, "maxLength": 100 },
+                        "label": { "type": "string", "minLength": 1, "maxLength": 255 },
+
+                        "category_id": { "type": ["string", "null"], "pattern": "^[0-9a-fA-F-]{36}$" },
+
+                        "data_type": {
+                          "type": ["string", "null"],
+                          "enum": ["TEXT","NUMBER","BOOLEAN","DATE","DATETIME","SINGLESELECT","MULTISELECT", null]
+                        },
+
+                        "element_type": {
+                          "type": "string",
+                          "enum": ["TEXT","TEXTAREA","DATE","DATETIME","SELECT","MULTISELECT","ACTION"]
+                        },
+
+                        "validation": { "type": ["object", "null"] },
+                        "ui_config": { "type": ["object", "null"] }
+                      }
+                    },
+
+                    "options": {
+                      "type": ["array", "null"],
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": ["option_key", "option_label", "option_order"],
+                        "properties": {
+                          "option_key": { "type": "string", "minLength": 1, "maxLength": 200 },
+                          "option_label": { "type": "string", "minLength": 1, "maxLength": 400 },
+                          "option_order": { "type": "integer", "minimum": 0 }
+                        }
+                      }
+                    }
+                  }
+                }$$::json,
+                field_config
+            )
+        ),
+
+    -- ------------------------------------------------------------------
+    -- Foreign keys (tenant-safe)
+    -- ------------------------------------------------------------------
+
+
+    -- Tenant-safe: forces panel_id to belong to same tenant_id.
+    -- Requires a UNIQUE/PK on schema_composition.form_panel(tenant_id, id) or equivalent.
+    CONSTRAINT fk_form_panel_field_panel_tenant
+        FOREIGN KEY (tenant_id, panel_id)
+        REFERENCES schema_composition.form_panel (tenant_id, id)
+        ON DELETE CASCADE,
+
+
+    CONSTRAINT fk_form_panel_field_field_def_tenant
+        FOREIGN KEY (tenant_id, field_def_id)
+        REFERENCES schema_composition.field_def (tenant_id, id)
+        ON DELETE RESTRICT
+);
+
+-- ----------------------------------------------------------------------
+-- Indexes
+-- ----------------------------------------------------------------------
+-- Common access patterns:
+--   - list all fields for a form panel ordered by field_order
+--   - join to field_def for reset/provenance workflows
+--   - tenant-scoped maintenance queries
+--   - diff/reset workflows (hash comparisons)
+-- ----------------------------------------------------------------------
+
+-- Fast joins to field_def (reset/provenance).
+CREATE INDEX IF NOT EXISTS ix_form_panel_field_field_def
+    ON schema_composition.form_panel_field (tenant_id, field_def_id);
+
+-- Optional: useful for recency queries and debugging.
+CREATE INDEX IF NOT EXISTS ix_form_panel_field_tenant_panel_updated_at
+    ON schema_composition.form_panel_field (tenant_id, panel_id, updated_at);
+
+-- Optional: accelerate "is overridden" checks via hash comparisons.
+CREATE INDEX IF NOT EXISTS ix_form_panel_field_hashes
+    ON schema_composition.form_panel_field (tenant_id, field_config_hash, source_field_def_hash);
+
+-- ----------------------------------------------------------------------
+-- Comments
+-- ----------------------------------------------------------------------
+
+COMMENT ON TABLE schema_composition.form_panel_field IS
+'Non-reusable field realization placed directly on a form panel. Stores an imprinted, editable field_config snapshot (field_def + options) with schema enforcement and hashes for diff/reset workflows.';
+
+COMMENT ON COLUMN schema_composition.form_panel_field.id IS
+'Primary row identifier (UUID). Immutable technical identity.';
+
+COMMENT ON COLUMN schema_composition.form_panel_field.tenant_id IS
+'Tenant boundary. All rows are scoped to a tenant for isolation and access control.';
+
+COMMENT ON COLUMN schema_composition.form_panel_field.panel_id IS
+'Owning form panel ID. The form panel that this field placement belongs to.';
+
+COMMENT ON COLUMN schema_composition.form_panel_field.field_def_id IS
+'Source catalog field definition ID (field_def). Used for provenance and reset/re-imprint. The effective field definition for this placement lives in field_config.';
+
+COMMENT ON COLUMN schema_composition.form_panel_field.field_order IS
+'Default display/tab order within the form panel. Null means unspecified; otherwise non-negative and unique within (tenant_id, panel_id) when present.';
+
+COMMENT ON COLUMN schema_composition.form_panel_field.ui_config IS
+'JSONB UI configuration overrides applied on top of the field_config.field.ui_config for this specific form placement (layout/display hints).';
+
+COMMENT ON COLUMN schema_composition.form_panel_field.field_config IS
+'Imprinted JSONB snapshot of the effective field definition for this form placement, including option definitions for select/multiselect. Editable without mutating the source field_def. Enforced by jsonb_matches_schema.';
+
+COMMENT ON COLUMN schema_composition.form_panel_field.field_config_hash IS
+'Hash (typically sha256 hex) of the current field_config JSONB. Used to detect edits and support diff workflows efficiently.';
+
+COMMENT ON COLUMN schema_composition.form_panel_field.source_field_def_hash IS
+'Hash (typically sha256 hex) of the canonical source snapshot from field_def + field_def_option at the time field_config was last imprinted. Used to detect catalog drift since imprint.';
+
+COMMENT ON COLUMN schema_composition.form_panel_field.last_imprinted_at IS
+'Timestamp of the last imprint operation that copied the catalog source definition into field_config.';
+
+COMMENT ON COLUMN schema_composition.form_panel_field.created_at IS
+'Row creation timestamp.';
+
+COMMENT ON COLUMN schema_composition.form_panel_field.updated_at IS
+'Row last-updated timestamp. Typically maintained by application code or a trigger.';
+
+COMMENT ON COLUMN schema_composition.form_panel_field.created_by IS
+'Optional actor identifier (username/service) that created the row.';
+
+COMMENT ON COLUMN schema_composition.form_panel_field.updated_by IS
+'Optional actor identifier (username/service) that last updated the row.';
+
+-- ----------------------------------------------------------------------
+-- Table: schema_composition.form_panel_component
+-- ----------------------------------------------------------------------
+-- PURPOSE
+--   Places a reusable component onto a specific form panel.  Provides
+--   per-panel ordering and per-placement UI overrides for the component.
+--   Each placement references a specific versioned component via
+--   component_id.  When a new version of a component is published, a
+--   form can choose to upgrade by updating the component_id.
+--
+--   The customization mechanism is nested_overrides, which applies PATCH-style
+--   overrides to nested panel_config and field_config inside embedded components.
+--   This allows a form to tailor a reused component (labels, validation, options,
+--   ui hints, panel_actions, etc.) while keeping the catalog component intact.
+--
+-- CORE CONCEPTS
+--   - Each row represents one instance of a component placed directly
+--     onto a form panel.
+--   - component_order controls ordering within the panel.  NULL means
+--     unspecified; otherwise must be non-negative and unique per
+--     (tenant_id, panel_id).
+--   - ui_config overrides the base configuration from the component.
+--   - Embedded component customization:
+--       nested_overrides contains selector-addressed patches that apply to:
+--         * field_config of component_panel_field nodes
+--         * panel_config of component_panel nodes
+--       Overrides are always PATCH semantics (no REPLACE mode).
+--
+-- IMPORTANT INVARIANTS
+--   - tenant_id scopes data to a tenant boundary.
+--   - panel_id must belong to the same tenant_id (tenant-safe FK).
+--   - component_id must belong to the same tenant_id (tenant-safe FK).
+--   - A given (tenant_id, panel_id, component_id) should be unique to
+--     prevent accidental duplicate placement of the same component on
+--     the same panel.
+--   - nested_overrides must conform to the Nested Overrides JSON schema.
+--   - updated_at is maintained by application code or a trigger.
+-- ----------------------------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS schema_composition.form_panel_component (
+    id UUID PRIMARY KEY,
+    tenant_id UUID NOT NULL,
+    panel_id UUID NOT NULL,
+    component_id UUID NOT NULL,
+    component_order INTEGER,
     ui_config JSONB,
 
     -- ------------------------------------------------------------------
@@ -1804,41 +2211,31 @@ CREATE TABLE IF NOT EXISTS dyno_form.form_panel (
     --     more advanced id-based merge protocol is introduced later.
     nested_overrides JSONB,
 
-    -- ------------------------------------------------------------------
-    -- Audit columns
-    -- ------------------------------------------------------------------
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     created_by VARCHAR(100),
     updated_by VARCHAR(100),
 
-    -- ------------------------------------------------------------------
+
+    CONSTRAINT ux_form_panel_component_tenant_id
+    UNIQUE (tenant_id, id),
+
     -- Constraints
-    -- ------------------------------------------------------------------
+    CONSTRAINT ck_form_panel_component_order_non_negative
+        CHECK (component_order IS NULL OR component_order >= 0),
 
-    -- Supports tenant-safe composite foreign keys from child tables.
-    CONSTRAINT ux_form_panel_tenant_id
-        UNIQUE (tenant_id, id),
+    CONSTRAINT uq_form_panel_component_panel_component
+        UNIQUE (tenant_id, panel_id, component_id),
 
-    -- Defensive: prevent empty/whitespace-only keys.
-    CONSTRAINT ck_form_panel_key_nonblank
-        CHECK (length(btrim(panel_key)) > 0),
-
-    -- Defensive: prevent empty/whitespace-only label if provided.
-    CONSTRAINT ck_form_panel_label_nonblank
-        CHECK (panel_label IS NULL OR length(btrim(panel_label)) > 0),
-
-    -- Stable identity within a form.
-    CONSTRAINT uq_form_panel_tenant_form_panel_key
-        UNIQUE (tenant_id, form_id, panel_key),
-
+    CONSTRAINT uq_form_panel_component_panel_order
+        UNIQUE (tenant_id, panel_id, component_order),    
+    
     -- Enforce nested_overrides JSON schema when present.
     -- NOTE: Assumes public.jsonb_matches_schema(instance_jsonb, schema_jsonb) exists.
     CONSTRAINT ck_form_panel_nested_overrides_schema
         CHECK (
             nested_overrides IS NULL
             OR public.jsonb_matches_schema(
-                nested_overrides,
                 $${
                   "$schema": "http://json-schema.org/draft-07/schema#",
                   "title": "DynoCRM Nested Overrides",
@@ -1933,391 +2330,89 @@ CREATE TABLE IF NOT EXISTS dyno_form.form_panel (
                       "description": "PATCH object merged into the target panel config."
                     }
                   }
-                }$$::jsonb
+                }$$::json,
+                nested_overrides
             )
         ),
 
-    -- ------------------------------------------------------------------
     -- Foreign keys (tenant-safe)
-    -- ------------------------------------------------------------------
-
-    -- Tenant-safe FK: forces form_id to belong to same tenant_id.
-    -- Requires a UNIQUE/PK on dyno_form.form(tenant_id, id) or equivalent.
-    CONSTRAINT fk_form_panel_form_tenant
-        FOREIGN KEY (tenant_id, form_id)
-        REFERENCES dyno_form.form (tenant_id, id)
-        ON DELETE CASCADE
-);
-
--- ----------------------------------------------------------------------
--- Indexes
--- ----------------------------------------------------------------------
--- Common access patterns:
---   - list panels for a form
---   - resolve a panel by (tenant_id, form_id, panel_key)
---   - search/filter on ui_config or nested_overrides traits (admin/debug tooling)
--- ----------------------------------------------------------------------
-
--- Load all panels for a form efficiently.
-CREATE INDEX IF NOT EXISTS ix_form_panel_tenant_form
-    ON dyno_form.form_panel (tenant_id, form_id);
-
--- Optional: JSONB GIN for searching/filtering on ui_config traits.
-CREATE INDEX IF NOT EXISTS ix_form_panel_ui_config_gin
-    ON dyno_form.form_panel
-    USING GIN (ui_config);
-
--- Optional: JSONB GIN for searching/filtering on nested_overrides traits.
--- Useful for admin/debugging queries (e.g., "find forms overriding field X").
-CREATE INDEX IF NOT EXISTS ix_form_panel_nested_overrides_gin
-    ON dyno_form.form_panel
-    USING GIN (nested_overrides);
-
--- Optional: useful for recency queries and debugging.
-CREATE INDEX IF NOT EXISTS ix_form_panel_tenant_form_updated_at
-    ON dyno_form.form_panel (tenant_id, form_id, updated_at);
-
--- ----------------------------------------------------------------------
--- Comments
--- ----------------------------------------------------------------------
-
-COMMENT ON TABLE dyno_form.form_panel IS
-'Panel within an actual form definition. Similar to component_panel but used for form composition. Supports nested_overrides to PATCH embedded catalog components, panels, and fields without mutating catalog items.';
-
-COMMENT ON COLUMN dyno_form.form_panel.id IS
-'Primary row identifier (UUID). Immutable technical identity.';
-
-COMMENT ON COLUMN dyno_form.form_panel.tenant_id IS
-'Tenant boundary. All form panels are scoped to a tenant for isolation and access control.';
-
-COMMENT ON COLUMN dyno_form.form_panel.form_id IS
-'Owning form ID. The form that this panel belongs to.';
-
-COMMENT ON COLUMN dyno_form.form_panel.panel_key IS
-'Stable identifier for this panel within (tenant_id, form_id). Used by builders/APIs for deterministic lookup.';
-
-COMMENT ON COLUMN dyno_form.form_panel.panel_label IS
-'Human-readable label shown in UI. Optional.';
-
-COMMENT ON COLUMN dyno_form.form_panel.ui_config IS
-'JSONB UI configuration for layout, styling, and container-level rendering hints for the form panel.';
-
-COMMENT ON COLUMN dyno_form.form_panel.nested_overrides IS
-'JSONB document containing selector-addressed PATCH overrides applied to embedded component trees within this form panel. Used to customize catalog components, nested panels, and fields without forking or modifying catalog definitions. Enforced by jsonb_matches_schema.';
-
-COMMENT ON COLUMN dyno_form.form_panel.created_at IS
-'Row creation timestamp.';
-
-COMMENT ON COLUMN dyno_form.form_panel.updated_at IS
-'Row last-updated timestamp. Typically maintained by application code or a trigger.';
-
-COMMENT ON COLUMN dyno_form.form_panel.created_by IS
-'Optional actor identifier (username/service) that created the row.';
-
-COMMENT ON COLUMN dyno_form.form_panel.updated_by IS
-'Optional actor identifier (username/service) that last updated the row.';
-
-
-
--- ----------------------------------------------------------------------
--- Table: dyno_form.form_panel_field
--- ----------------------------------------------------------------------
--- PURPOSE
---   Defines a non-reusable field realization placed directly onto a form panel.
---
---   This table is intentionally very similar to dyno_form.component_panel_field,
---   but it lives in the form domain (form definitions are not reusable like catalog
---   components). A form_panel_field represents a concrete field instance as used
---   by a specific form, with its own imprinted and editable field_config.
---
---   Key idea:
---     - field_def_id is a provenance and reset source (optional conceptually),
---       but the effective definition used by the form lives in field_config.
---     - Editing the field inside a form updates field_config and does not mutate
---       the catalog field_def.
---
--- CORE CONCEPTS
---   - Composition (form_panel + field_def):
---       A form panel contains zero or more fields. Each row represents one field
---       instance placed on that panel, sourced from a catalog field_def.
---   - Ordering:
---       field_order controls default tab/display ordering within the form panel.
---   - UI configuration overrides:
---       field_config.field.ui_config is the imprinted base.
---       form_panel_field.ui_config is an override/augmentation applied in the
---       context of this specific placement.
---   - Imprinting (field_config):
---       field_config is a JSONB snapshot that can fully represent the effective
---       field_def and its options at the time the field was placed on the form.
---       Edits modify field_config, not field_def.
---   - Hashing:
---       * field_config_hash: hash of the current field_config JSONB (detect edits/diff).
---       * source_field_def_hash: hash of the canonical source snapshot from field_def
---         (field_def + field_def_option) at imprint time (detect catalog drift).
---
--- IMPORTANT INVARIANTS
---   - tenant_id scopes data to a tenant boundary.
---   - panel_id must belong to the same tenant_id (tenant-safe FK).
---   - field_def_id must belong to the same tenant_id (tenant-safe FK).
---   - A given (tenant_id, panel_id, field_def_id) is unique to prevent accidental
---     duplicate placement of the same field_def on the same form panel.
---   - field_order, when provided, must be >= 0.
---   - field_config must conform to the JSON schema enforced by jsonb_matches_schema.
---   - Hash columns are typically maintained by application logic or triggers.
--- ----------------------------------------------------------------------
-
-CREATE TABLE IF NOT EXISTS dyno_form.form_panel_field (
-    -- ------------------------------------------------------------------
-    -- Primary identity
-    -- ------------------------------------------------------------------
-    id UUID PRIMARY KEY,
-
-    -- ------------------------------------------------------------------
-    -- Tenant boundary and owning form panel
-    -- ------------------------------------------------------------------
-    tenant_id UUID NOT NULL,
-
-    -- The form panel this field belongs to.
-    panel_id UUID NOT NULL,
-
-    -- The catalog field definition used as the source for this field placement.
-    -- This is provenance and reset source. The effective definition used by the
-    -- form lives in field_config (imprinted snapshot).
-    field_def_id UUID NOT NULL,
-
-    -- Default display/tab order within the form panel.
-    -- Null means "unspecified" (UI/service may apply a default ordering strategy).
-    field_order INTEGER,
-
-    -- Optional UI overrides applied for this specific placement on the form panel.
-    -- This is layered on top of field_config.field.ui_config.
-    ui_config JSONB,
-
-    -- ------------------------------------------------------------------
-    -- Imprinted field definition snapshot
-    -- ------------------------------------------------------------------
-    -- JSONB snapshot representing the effective field definition and options for this
-    -- placement. This is the editable copy that can diverge from the catalog field_def.
-    --
-    -- The schema is enforced via public.jsonb_matches_schema(field_config, <schema>).
-    field_config JSONB NOT NULL,
-
-    -- Hash of the current field_config JSONB (typically sha256 hex, 64 chars).
-    -- Used to detect edits and support fast diff checks without deep JSON comparison.
-    field_config_hash VARCHAR(64),
-
-    -- Hash of the canonical source snapshot from field_def + field_def_option that was
-    -- used to imprint field_config initially (typically sha256 hex, 64 chars).
-    -- Used to detect when the catalog source changed since imprint (reset candidate).
-    source_field_def_hash VARCHAR(64),
-
-    -- Timestamp when field_config was last imprinted from the catalog source.
-    last_imprinted_at TIMESTAMPTZ,
-
-    -- ------------------------------------------------------------------
-    -- Audit columns
-    -- ------------------------------------------------------------------
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    created_by VARCHAR(100),
-    updated_by VARCHAR(100),
-
-    -- ------------------------------------------------------------------
-    -- Constraints
-    -- ------------------------------------------------------------------
-
-    -- Supports tenant-safe composite foreign keys from child tables.
-    CONSTRAINT ux_form_panel_field_tenant_id
-        UNIQUE (tenant_id, id),
-
-    -- Defensive: ordering, when provided, must be non-negative.
-    CONSTRAINT ck_form_panel_field_order_non_negative
-        CHECK (field_order IS NULL OR field_order >= 0),
-
-    -- Prevent duplicate placement of the same field_def on the same form panel.
-    CONSTRAINT uq_form_panel_field_panel_field_def
-        UNIQUE (tenant_id, panel_id, field_def_id),
-
-    -- Optional: enforce a single field_order value per panel when field_order is used.
-    -- This helps prevent "two fields share order 10" ambiguity.
-    -- (Allows multiple NULLs.)
-    CONSTRAINT uq_form_panel_field_panel_order
-        UNIQUE (tenant_id, panel_id, field_order),
-
-    -- Enforce hash formatting when provided (sha256 hex).
-    CONSTRAINT ck_form_panel_field_field_config_hash_format
-        CHECK (field_config_hash IS NULL OR field_config_hash ~ '^[0-9a-f]{64}$'),
-
-    CONSTRAINT ck_form_panel_field_source_field_def_hash_format
-        CHECK (source_field_def_hash IS NULL OR source_field_def_hash ~ '^[0-9a-f]{64}$'),
-
-    -- Enforce field_config JSON schema.
-    -- NOTE: This assumes public.jsonb_matches_schema(instance_jsonb, schema_jsonb) exists.
-    CONSTRAINT ck_form_panel_field_field_config_schema
-        CHECK (
-            public.jsonb_matches_schema(
-                field_config,
-                $${
-                  "$schema": "http://json-schema.org/draft-07/schema#",
-                  "title": "DynoCRM Form Panel Field Config",
-                  "type": "object",
-                  "additionalProperties": false,
-                  "required": ["schema_version", "field"],
-                  "properties": {
-                    "schema_version": { "type": "integer", "minimum": 1 },
-
-                    "field": {
-                      "type": "object",
-                      "additionalProperties": false,
-                      "required": ["field_key", "label", "element_type"],
-                      "properties": {
-                        "field_def_business_key": { "type": "string", "minLength": 1, "maxLength": 400 },
-                        "field_def_version": { "type": "integer", "minimum": 1 },
-
-                        "name": { "type": "string", "minLength": 1, "maxLength": 100 },
-                        "description": { "type": ["string", "null"], "maxLength": 1000 },
-
-                        "field_key": { "type": "string", "minLength": 1, "maxLength": 100 },
-                        "label": { "type": "string", "minLength": 1, "maxLength": 255 },
-
-                        "category_id": { "type": ["string", "null"], "pattern": "^[0-9a-fA-F-]{36}$" },
-
-                        "data_type": {
-                          "type": ["string", "null"],
-                          "enum": ["TEXT","NUMBER","BOOLEAN","DATE","DATETIME","SINGLESELECT","MULTISELECT", null]
-                        },
-
-                        "element_type": {
-                          "type": "string",
-                          "enum": ["TEXT","TEXTAREA","DATE","DATETIME","SELECT","MULTISELECT","ACTION"]
-                        },
-
-                        "validation": { "type": ["object", "null"] },
-                        "ui_config": { "type": ["object", "null"] }
-                      }
-                    },
-
-                    "options": {
-                      "type": ["array", "null"],
-                      "items": {
-                        "type": "object",
-                        "additionalProperties": false,
-                        "required": ["option_key", "option_label", "option_order"],
-                        "properties": {
-                          "option_key": { "type": "string", "minLength": 1, "maxLength": 200 },
-                          "option_label": { "type": "string", "minLength": 1, "maxLength": 400 },
-                          "option_order": { "type": "integer", "minimum": 0 }
-                        }
-                      }
-                    }
-                  }
-                }$$::jsonb
-            )
-        ),
-
-    -- ------------------------------------------------------------------
-    -- Foreign keys (tenant-safe)
-    -- ------------------------------------------------------------------
-
-
-    -- Tenant-safe: forces panel_id to belong to same tenant_id.
-    -- Requires a UNIQUE/PK on dyno_form.form_panel(tenant_id, id) or equivalent.
-    CONSTRAINT fk_form_panel_field_panel_tenant
-        FOREIGN KEY (tenant_id, panel_id)
-        REFERENCES dyno_form.form_panel (tenant_id, id)
+    CONSTRAINT fk_form_panel_component_panel
+        FOREIGN KEY (panel_id)
+        REFERENCES schema_composition.form_panel (id)
         ON DELETE CASCADE,
 
+    CONSTRAINT fk_form_panel_component_panel_tenant
+        FOREIGN KEY (tenant_id, panel_id)
+        REFERENCES schema_composition.form_panel (tenant_id, id)
+        ON DELETE CASCADE,
 
-    CONSTRAINT fk_form_panel_field_field_def_tenant
-        FOREIGN KEY (tenant_id, field_def_id)
-        REFERENCES dyno_form.field_def (tenant_id, id)
+    CONSTRAINT fk_form_panel_component_component
+        FOREIGN KEY (component_id)
+        REFERENCES schema_composition.component (id)
+        ON DELETE RESTRICT,
+
+    CONSTRAINT fk_form_panel_component_component_tenant
+        FOREIGN KEY (tenant_id, component_id)
+        REFERENCES schema_composition.component (tenant_id, id)
         ON DELETE RESTRICT
 );
 
 -- ----------------------------------------------------------------------
--- Indexes
--- ----------------------------------------------------------------------
--- Common access patterns:
---   - list all fields for a form panel ordered by field_order
---   - join to field_def for reset/provenance workflows
---   - tenant-scoped maintenance queries
---   - diff/reset workflows (hash comparisons)
+-- Indexes for schema_composition.form_panel_component
 -- ----------------------------------------------------------------------
 
--- Fast joins to field_def (reset/provenance).
-CREATE INDEX IF NOT EXISTS ix_form_panel_field_field_def
-    ON dyno_form.form_panel_field (tenant_id, field_def_id);
+-- Fast tenant scoping
+CREATE INDEX IF NOT EXISTS ix_form_panel_component_tenant_id
+    ON schema_composition.form_panel_component (tenant_id);
 
--- Optional: JSONB search/filtering on ui_config traits.
-CREATE INDEX IF NOT EXISTS ix_form_panel_field_ui_config_gin
-    ON dyno_form.form_panel_field
-    USING GIN (ui_config);
+-- Load all components for a panel efficiently (and sort by component_order)
+CREATE INDEX IF NOT EXISTS ix_form_panel_component_panel_order
+    ON schema_composition.form_panel_component (tenant_id, panel_id, component_order);
 
--- Optional: JSONB search/filtering on field_config traits (debugging, analysis, admin tools).
-CREATE INDEX IF NOT EXISTS ix_form_panel_field_field_config_gin
-    ON dyno_form.form_panel_field
-    USING GIN (field_config);
-
--- Optional: useful for recency queries and debugging.
-CREATE INDEX IF NOT EXISTS ix_form_panel_field_tenant_panel_updated_at
-    ON dyno_form.form_panel_field (tenant_id, panel_id, updated_at);
-
--- Optional: accelerate "is overridden" checks via hash comparisons.
-CREATE INDEX IF NOT EXISTS ix_form_panel_field_hashes
-    ON dyno_form.form_panel_field (tenant_id, field_config_hash, source_field_def_hash);
+-- Fast joins to component (when rendering)
+CREATE INDEX IF NOT EXISTS ix_form_panel_component_component
+    ON schema_composition.form_panel_component (tenant_id, component_id);
 
 -- ----------------------------------------------------------------------
--- Comments
+-- Column comments for schema_composition.form_panel_component
 -- ----------------------------------------------------------------------
 
-COMMENT ON TABLE dyno_form.form_panel_field IS
-'Non-reusable field realization placed directly on a form panel. Stores an imprinted, editable field_config snapshot (field_def + options) with schema enforcement and hashes for diff/reset workflows.';
+COMMENT ON TABLE schema_composition.form_panel_component IS
+'Places a reusable component onto a specific form panel. Controls per-panel ordering and supports per-placement UI configuration overrides. The component_id references a specific version of a component. Tenant-scoped and panel-scoped. Supports nested_overrides to PATCH embedded catalog components, panels, and fields without mutating catalog items.';
 
-COMMENT ON COLUMN dyno_form.form_panel_field.id IS
+COMMENT ON COLUMN schema_composition.form_panel_component.id IS
 'Primary row identifier (UUID). Immutable technical identity.';
 
-COMMENT ON COLUMN dyno_form.form_panel_field.tenant_id IS
+COMMENT ON COLUMN schema_composition.form_panel_component.tenant_id IS
 'Tenant boundary. All rows are scoped to a tenant for isolation and access control.';
 
-COMMENT ON COLUMN dyno_form.form_panel_field.panel_id IS
-'Owning form panel ID. The form panel that this field placement belongs to.';
+COMMENT ON COLUMN schema_composition.form_panel_component.panel_id IS
+'Owning form panel ID. The panel that this component placement belongs to.';
 
-COMMENT ON COLUMN dyno_form.form_panel_field.field_def_id IS
-'Source catalog field definition ID (field_def). Used for provenance and reset/re-imprint. The effective field definition for this placement lives in field_config.';
+COMMENT ON COLUMN schema_composition.form_panel_component.component_id IS
+'Reusable component ID (component). The component definition placed on this form panel. Versioned by the component record.';
 
-COMMENT ON COLUMN dyno_form.form_panel_field.field_order IS
-'Default display/tab order within the form panel. Null means unspecified; otherwise non-negative and unique within (tenant_id, panel_id) when present.';
+COMMENT ON COLUMN schema_composition.form_panel_component.component_order IS
+'Default display/tab order within the panel for components. Null means unspecified; otherwise non-negative and unique within (tenant_id, panel_id) when present.';
 
-COMMENT ON COLUMN dyno_form.form_panel_field.ui_config IS
-'JSONB UI configuration overrides applied on top of the field_config.field.ui_config for this specific form placement (layout/display hints).';
+COMMENT ON COLUMN schema_composition.form_panel_component.ui_config IS
+'JSONB UI configuration overrides applied on top of component.ui_config for this specific panel placement (layout, display hints, conditional UI metadata, etc.).';
 
-COMMENT ON COLUMN dyno_form.form_panel_field.field_config IS
-'Imprinted JSONB snapshot of the effective field definition for this form placement, including option definitions for select/multiselect. Editable without mutating the source field_def. Enforced by jsonb_matches_schema.';
-
-COMMENT ON COLUMN dyno_form.form_panel_field.field_config_hash IS
-'Hash (typically sha256 hex) of the current field_config JSONB. Used to detect edits and support diff workflows efficiently.';
-
-COMMENT ON COLUMN dyno_form.form_panel_field.source_field_def_hash IS
-'Hash (typically sha256 hex) of the canonical source snapshot from field_def + field_def_option at the time field_config was last imprinted. Used to detect catalog drift since imprint.';
-
-COMMENT ON COLUMN dyno_form.form_panel_field.last_imprinted_at IS
-'Timestamp of the last imprint operation that copied the catalog source definition into field_config.';
-
-COMMENT ON COLUMN dyno_form.form_panel_field.created_at IS
+COMMENT ON COLUMN schema_composition.form_panel_component.created_at IS
 'Row creation timestamp.';
 
-COMMENT ON COLUMN dyno_form.form_panel_field.updated_at IS
+COMMENT ON COLUMN schema_composition.form_panel_component.updated_at IS
 'Row last-updated timestamp. Typically maintained by application code or a trigger.';
 
-COMMENT ON COLUMN dyno_form.form_panel_field.created_by IS
+COMMENT ON COLUMN schema_composition.form_panel_component.created_by IS
 'Optional actor identifier (username/service) that created the row.';
 
-COMMENT ON COLUMN dyno_form.form_panel_field.updated_by IS
+COMMENT ON COLUMN schema_composition.form_panel_component.updated_by IS
 'Optional actor identifier (username/service) that last updated the row.';
 
 
 -- ----------------------------------------------------------------------
--- Table: dyno_form.form_submission
+-- Table: schema_composition.form_submission
 -- ----------------------------------------------------------------------
 -- PURPOSE
 --   Represents a tenant-scoped "submission envelope" for a specific form.
@@ -2326,7 +2421,7 @@ COMMENT ON COLUMN dyno_form.form_panel_field.updated_by IS
 --     - Users/automations can save drafts (update the submission and its values)
 --     - Users can submit, and later re-submit (update again + bump submission_version)
 --
---   The actual field answers live in dyno_form.form_submission_value
+--   The actual field answers live in schema_composition.form_submission_value
 --   (one row per field instance per submission).
 --
 -- CORE CONCEPTS
@@ -2354,7 +2449,7 @@ COMMENT ON COLUMN dyno_form.form_panel_field.updated_by IS
 -- ----------------------------------------------------------------------
 
 
-CREATE TABLE IF NOT EXISTS dyno_form.form_submission (
+CREATE TABLE IF NOT EXISTS schema_composition.form_submission (
     -- ------------------------------------------------------------------
     -- Primary identity
     -- ------------------------------------------------------------------
@@ -2469,7 +2564,7 @@ CREATE TABLE IF NOT EXISTS dyno_form.form_submission (
     -- Tenant-safe FK to forms.
     CONSTRAINT fk_form_submission_form_tenant
         FOREIGN KEY (tenant_id, form_id)
-        REFERENCES dyno_form.form (tenant_id, id)
+        REFERENCES schema_composition.form (tenant_id, id)
         ON DELETE CASCADE
 );
 
@@ -2482,57 +2577,57 @@ CREATE TABLE IF NOT EXISTS dyno_form.form_submission (
 -- ----------------------------------------------------------------------
 
 CREATE INDEX IF NOT EXISTS ix_form_submission_tenant_form
-    ON dyno_form.form_submission (tenant_id, form_id);
+    ON schema_composition.form_submission (tenant_id, form_id);
 
 CREATE INDEX IF NOT EXISTS ix_form_submission_tenant_form_updated_at
-    ON dyno_form.form_submission (tenant_id, form_id, updated_at);
+    ON schema_composition.form_submission (tenant_id, form_id, updated_at);
 
 -- ----------------------------------------------------------------------
 -- Comments
 -- ----------------------------------------------------------------------
 
-COMMENT ON TABLE dyno_form.form_submission IS
-'Updatable tenant-scoped submission envelope for a specific form. Stores lifecycle state (draft vs submitted), last submitted timestamp, and a submission_version counter (0 for drafts; increments per submit/re-submit). Actual field values are stored in dyno_form.form_submission_value (one row per field instance per submission).';
+COMMENT ON TABLE schema_composition.form_submission IS
+'Updatable tenant-scoped submission envelope for a specific form. Stores lifecycle state (draft vs submitted), last submitted timestamp, and a submission_version counter (0 for drafts; increments per submit/re-submit). Actual field values are stored in schema_composition.form_submission_value (one row per field instance per submission).';
 
-COMMENT ON COLUMN dyno_form.form_submission.id IS
+COMMENT ON COLUMN schema_composition.form_submission.id IS
 'Primary row identifier (UUID). Immutable technical identity for the submission envelope.';
 
-COMMENT ON COLUMN dyno_form.form_submission.tenant_id IS
+COMMENT ON COLUMN schema_composition.form_submission.tenant_id IS
 'Tenant boundary. Submissions are strictly scoped to a tenant for isolation and access control.';
 
-COMMENT ON COLUMN dyno_form.form_submission.form_id IS
-'Identifier of the owning form definition (dyno_form.form.id). Tenant-safe reference: the form must belong to the same tenant_id.';
+COMMENT ON COLUMN schema_composition.form_submission.form_id IS
+'Identifier of the owning form definition (schema_composition.form.id). Tenant-safe reference: the form must belong to the same tenant_id.';
 
-COMMENT ON COLUMN dyno_form.form_submission.is_submitted IS
+COMMENT ON COLUMN schema_composition.form_submission.is_submitted IS
 'When false, this submission is a draft (submission_version = 0 and submitted_at is NULL). When true, it has been submitted at least once (submission_version >= 1 and submitted_at is required).';
 
-COMMENT ON COLUMN dyno_form.form_submission.submitted_at IS
+COMMENT ON COLUMN schema_composition.form_submission.submitted_at IS
 'Timestamp of the most recent submit action. NULL for drafts. Updated on re-submit to reflect the latest submission time.';
 
-COMMENT ON COLUMN dyno_form.form_submission.submission_version IS
+COMMENT ON COLUMN schema_composition.form_submission.submission_version IS
 'Monotonic counter of how many times the submission has been submitted. Drafts must be 0. First submit sets it to 1. Each re-submit increments it (2, 3, ...).';
 
-COMMENT ON COLUMN dyno_form.form_submission.is_archived IS
+COMMENT ON COLUMN schema_composition.form_submission.is_archived IS
 'When true, the submission is archived (retained for history/audit but not actively used). Timestamp consistency is enforced via archived_at.';
 
-COMMENT ON COLUMN dyno_form.form_submission.archived_at IS
+COMMENT ON COLUMN schema_composition.form_submission.archived_at IS
 'Timestamp when the submission was archived. Must be non-null only when is_archived is true.';
 
-COMMENT ON COLUMN dyno_form.form_submission.created_at IS
+COMMENT ON COLUMN schema_composition.form_submission.created_at IS
 'Row creation timestamp (typically when the draft submission was first created).';
 
-COMMENT ON COLUMN dyno_form.form_submission.updated_at IS
+COMMENT ON COLUMN schema_composition.form_submission.updated_at IS
 'Row last-updated timestamp (updated by application logic or a trigger).';
 
-COMMENT ON COLUMN dyno_form.form_submission.created_by IS
+COMMENT ON COLUMN schema_composition.form_submission.created_by IS
 'Optional actor identifier (username/service) that created the submission envelope.';
 
-COMMENT ON COLUMN dyno_form.form_submission.updated_by IS
+COMMENT ON COLUMN schema_composition.form_submission.updated_by IS
 'Optional actor identifier (username/service) that last updated the submission envelope.';
 
 
 -- ----------------------------------------------------------------------
--- Table: dyno_form.form_submission_value
+-- Table: schema_composition.form_submission_value
 -- ----------------------------------------------------------------------
 -- PURPOSE
 --   Stores captured values for a form submission in a flat, query-friendly shape
@@ -2564,14 +2659,12 @@ COMMENT ON COLUMN dyno_form.form_submission.updated_by IS
 --
 --       Recommended segment convention (example):
 --         <form_key>.<form_panel_key>.<field_key>
---         <form_key>.<form_panel_key>.<component_instance_key>.<component_panel_key>.<field_key>
+--         <form_key>.<form_panel_key>.<component_panel_key>.<field_key>
 --
 --       Notes:
 --         - Use stable keys, not labels.
 --         - field_key should come from the effective field_config.field.field_key
 --           for that specific placement.
---         - component_instance_key should be the stable key of the specific
---           form_panel_component placement (not the catalog component_key alone).
 --
 -- IMPORTANT INVARIANTS
 --   - tenant_id scopes data to a tenant boundary.
@@ -2580,7 +2673,7 @@ COMMENT ON COLUMN dyno_form.form_submission.updated_by IS
 --   - The placement-specific uniqueness constraints are retained for safety.
 -- ----------------------------------------------------------------------
 
-CREATE TABLE IF NOT EXISTS dyno_form.form_submission_value (
+CREATE TABLE IF NOT EXISTS schema_composition.form_submission_value (
     -- ------------------------------------------------------------------
     -- Primary identity
     -- ------------------------------------------------------------------
@@ -2632,6 +2725,9 @@ CREATE TABLE IF NOT EXISTS dyno_form.form_submission_value (
     --   - future extensions (tokens, references, etc.)
     value JSONB,
 
+    -- Search surface for global/substring search (maintained by trigger)
+    value_search_text TEXT,
+
     -- ------------------------------------------------------------------
     -- Audit columns
     -- ------------------------------------------------------------------
@@ -2643,6 +2739,75 @@ CREATE TABLE IF NOT EXISTS dyno_form.form_submission_value (
     -- ------------------------------------------------------------------
     -- Constraints
     -- ------------------------------------------------------------------
+
+    CONSTRAINT ck_form_submission_value_schema
+        CHECK (
+        value IS NULL
+        OR public.jsonb_matches_schema(
+            $${
+                "$schema": "http://json-schema.org/draft-07/schema#",
+                "title": "DynoCRM Form Submission Value",
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["data_type", "value"],
+                "properties": {
+                    "data_type": {
+                    "type": "string",
+                    "enum": [
+                        "TEXT",
+                        "NUMBER",
+                        "BOOLEAN",
+                        "DATE",
+                        "DATETIME",
+                        "SINGLESELECT",
+                        "MULTISELECT"
+                    ]
+                    },
+                    "value": {}
+                },
+                "allOf": [
+                    {
+                    "if": { "properties": { "data_type": { "const": "TEXT" } } },
+                    "then": { "properties": { "value": { "type": "string" } } }
+                    },
+                    {
+                    "if": { "properties": { "data_type": { "const": "DATE" } } },
+                    "then": { "properties": { "value": { "type": "string" } } }
+                    },
+                    {
+                    "if": { "properties": { "data_type": { "const": "DATETIME" } } },
+                    "then": { "properties": { "value": { "type": "string" } } }
+                    },
+                    {
+                    "if": { "properties": { "data_type": { "const": "SINGLESELECT" } } },
+                    "then": { "properties": { "value": { "type": "string", "minLength": 1, "maxLength": 200 } } }
+                    },
+                    {
+                    "if": { "properties": { "data_type": { "const": "MULTISELECT" } } },
+                    "then": {
+                        "properties": {
+                        "value": {
+                            "type": "array",
+                            "items": { "type": "string", "minLength": 1, "maxLength": 200 },
+                            "maxItems": 1000
+                        }
+                        }
+                    }
+                    },
+                    {
+                    "if": { "properties": { "data_type": { "const": "NUMBER" } } },
+                    "then": { "properties": { "value": { "type": "number" } } }
+                    },
+                    {
+                    "if": { "properties": { "data_type": { "const": "BOOLEAN" } } },
+                    "then": { "properties": { "value": { "type": "boolean" } } }
+                    }
+                ]
+            }$$::json,
+            value
+        )
+    ),
+
 
     -- Defensive: prevent empty/whitespace-only paths.
     CONSTRAINT ck_form_submission_value_field_path_nonblank
@@ -2697,58 +2862,58 @@ CREATE TABLE IF NOT EXISTS dyno_form.form_submission_value (
 
     CONSTRAINT fk_form_submission_value_submission_tenant
         FOREIGN KEY (tenant_id, form_submission_id)
-        REFERENCES dyno_form.form_submission (tenant_id, id)
+        REFERENCES schema_composition.form_submission (tenant_id, id)
         ON DELETE CASCADE,
 
     CONSTRAINT fk_form_submission_value_field_def_tenant
         FOREIGN KEY (tenant_id, field_def_id)
-        REFERENCES dyno_form.field_def (tenant_id, id)
+        REFERENCES schema_composition.field_def (tenant_id, id)
         ON DELETE RESTRICT,
 
     CONSTRAINT fk_form_submission_value_form_panel_field_tenant
         FOREIGN KEY (tenant_id, form_panel_field_id)
-        REFERENCES dyno_form.form_panel_field (tenant_id, id)
+        REFERENCES schema_composition.form_panel_field (tenant_id, id)
         ON DELETE RESTRICT,
 
     CONSTRAINT fk_form_submission_value_form_panel_component_tenant
         FOREIGN KEY (tenant_id, form_panel_component_id)
-        REFERENCES dyno_form.form_panel_component (tenant_id, id)
+        REFERENCES schema_composition.form_panel_component (tenant_id, id)
         ON DELETE RESTRICT,
 
     CONSTRAINT fk_form_submission_value_component_panel_field_tenant
         FOREIGN KEY (tenant_id, component_panel_field_id)
-        REFERENCES dyno_form.component_panel_field (tenant_id, id)
+        REFERENCES schema_composition.component_panel_field (tenant_id, id)
         ON DELETE RESTRICT
 );
 
 -- ----------------------------------------------------------------------
--- Indexes for dyno_form.form_submission_value
+-- Indexes for schema_composition.form_submission_value
 -- ----------------------------------------------------------------------
 
 -- Fast tenant scoping.
 CREATE INDEX IF NOT EXISTS ix_form_submission_value_tenant_id
-    ON dyno_form.form_submission_value (tenant_id);
+    ON schema_composition.form_submission_value (tenant_id);
 
 -- Retrieve all values for a submission.
 CREATE INDEX IF NOT EXISTS ix_form_submission_value_submission
-    ON dyno_form.form_submission_value (tenant_id, form_submission_id);
+    ON schema_composition.form_submission_value (tenant_id, form_submission_id);
 
 -- Fast lookup of a specific field instance by fully qualified path.
 CREATE INDEX IF NOT EXISTS ix_form_submission_value_submission_field_path
-    ON dyno_form.form_submission_value (tenant_id, form_submission_id, field_path);
+    ON schema_composition.form_submission_value (tenant_id, form_submission_id, field_path);
 
 -- Filter values by field_def across submissions.
 CREATE INDEX IF NOT EXISTS ix_form_submission_value_field_def
-    ON dyno_form.form_submission_value (tenant_id, field_def_id);
+    ON schema_composition.form_submission_value (tenant_id, field_def_id);
 
 -- Lookup direct field values for a specific panel placement.
 CREATE INDEX IF NOT EXISTS ix_form_submission_value_panel_field
-    ON dyno_form.form_submission_value (tenant_id, form_panel_field_id)
+    ON schema_composition.form_submission_value (tenant_id, form_panel_field_id)
     WHERE form_panel_field_id IS NOT NULL;
 
 -- Lookup component field values for a specific component placement.
 CREATE INDEX IF NOT EXISTS ix_form_submission_value_component_field
-    ON dyno_form.form_submission_value (
+    ON schema_composition.form_submission_value (
         tenant_id,
         form_panel_component_id,
         component_panel_field_id
@@ -2757,163 +2922,163 @@ CREATE INDEX IF NOT EXISTS ix_form_submission_value_component_field
 
 -- JSONB GIN index for value (useful for searching within captured data).
 CREATE INDEX IF NOT EXISTS ix_form_submission_value_value_gin
-    ON dyno_form.form_submission_value
+    ON schema_composition.form_submission_value
     USING GIN (value);
 
 -- Recency queries.
 CREATE INDEX IF NOT EXISTS ix_form_submission_value_tenant_submission_updated_at
-    ON dyno_form.form_submission_value (tenant_id, form_submission_id, updated_at);
+    ON schema_composition.form_submission_value (tenant_id, form_submission_id, updated_at);
+
+-- CREATE INDEX IF NOT EXISTS ix_fsv_value_search_trgm_lower
+-- ON schema_composition.form_submission_value
+-- USING GIN (lower(value_search_text) gin_trgm_ops)
+-- WHERE value_search_text IS NOT NULL;
+
 
 -- ----------------------------------------------------------------------
--- Column comments for dyno_form.form_submission_value
+-- Column comments for schema_composition.form_submission_value
 -- ----------------------------------------------------------------------
 
-COMMENT ON TABLE dyno_form.form_submission_value IS
+COMMENT ON TABLE schema_composition.form_submission_value IS
 'Stores captured values for a specific field instance within a form submission. Each row represents one field instance, identified by field_path. The instance is either a direct field on a form panel (form_panel_field_id) or a field inside a component placed on a form panel (form_panel_component_id + component_panel_field_id). Exactly one of these placement paths must be non-null.';
 
-COMMENT ON COLUMN dyno_form.form_submission_value.id IS
+COMMENT ON COLUMN schema_composition.form_submission_value.id IS
 'Primary row identifier (UUID). Immutable technical identity.';
 
-COMMENT ON COLUMN dyno_form.form_submission_value.tenant_id IS
+COMMENT ON COLUMN schema_composition.form_submission_value.tenant_id IS
 'Tenant boundary. All rows are scoped to a tenant for isolation and access control.';
 
-COMMENT ON COLUMN dyno_form.form_submission_value.form_submission_id IS
+COMMENT ON COLUMN schema_composition.form_submission_value.form_submission_id IS
 'Identifier of the form submission this value belongs to.';
 
-COMMENT ON COLUMN dyno_form.form_submission_value.field_def_id IS
+COMMENT ON COLUMN schema_composition.form_submission_value.field_def_id IS
 'Identifier of the underlying catalog field_def used as the provenance/source type for this field instance. Useful for analytics and grouping by field type.';
 
-COMMENT ON COLUMN dyno_form.form_submission_value.field_path IS
+COMMENT ON COLUMN schema_composition.form_submission_value.field_path IS
 'Fully qualified dot-separated path identifying the field instance within the form definition tree at the time of submission. Primary disambiguator for flat storage and required to be unique per submission.';
 
-COMMENT ON COLUMN dyno_form.form_submission_value.form_panel_field_id IS
+COMMENT ON COLUMN schema_composition.form_submission_value.form_panel_field_id IS
 'Reference to a direct field placement on a form panel. NULL when the value comes from a field inside a component.';
 
-COMMENT ON COLUMN dyno_form.form_submission_value.form_panel_component_id IS
+COMMENT ON COLUMN schema_composition.form_submission_value.form_panel_component_id IS
 'Reference to a specific component placement on a form panel. Used together with component_panel_field_id to identify a field inside a component.';
 
-COMMENT ON COLUMN dyno_form.form_submission_value.component_panel_field_id IS
+COMMENT ON COLUMN schema_composition.form_submission_value.component_panel_field_id IS
 'Identifier of the field inside a catalog component (component_panel_field). Used together with form_panel_component_id.';
 
-COMMENT ON COLUMN dyno_form.form_submission_value.value IS
+COMMENT ON COLUMN schema_composition.form_submission_value.value IS
 'Captured field value stored as JSONB. Shape depends on field_def.data_type (e.g., string for TEXT, number for NUMBER, boolean for BOOLEAN, array for MULTISELECT).';
 
-COMMENT ON COLUMN dyno_form.form_submission_value.created_at IS
+COMMENT ON COLUMN schema_composition.form_submission_value.created_at IS
 'Row creation timestamp.';
 
-COMMENT ON COLUMN dyno_form.form_submission_value.updated_at IS
+COMMENT ON COLUMN schema_composition.form_submission_value.updated_at IS
 'Row last-updated timestamp. Typically maintained by application code or a trigger.';
 
-COMMENT ON COLUMN dyno_form.form_submission_value.created_by IS
+COMMENT ON COLUMN schema_composition.form_submission_value.created_by IS
 'Optional actor identifier (username/service) that created the row.';
 
-COMMENT ON COLUMN dyno_form.form_submission_value.updated_by IS
+COMMENT ON COLUMN schema_composition.form_submission_value.updated_by IS
 'Optional actor identifier (username/service) that last updated the row.';
+
+-- ----------------------------------------------------------------------
+-- Function: schema_composition.compute_form_submission_value_search_text
+-- ----------------------------------------------------------------------
+-- PURPOSE
+--   Derives a stable, searchable TEXT representation from the JSONB value wrapper:
+--     { "data_type": "<FIELD_DATA_TYPE>", "value": <typed> }
+--
+--   Rules:
+--     - TEXT/DATE/DATETIME/SINGLESELECT -> trimmed scalar string
+--     - NUMBER/BOOLEAN                 -> scalar cast to text
+--     - MULTISELECT                    -> newline-joined array of strings (stable, readable)
+--
+-- NOTES
+--   - Returns NULL for NULL/empty values.
+--   - Kept in schema_composition to avoid polluting public.
+-- ----------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION schema_composition.compute_form_submission_value_search_text(p_value jsonb)
+RETURNS text
+LANGUAGE plpgsql
+IMMUTABLE
+AS $$
+DECLARE
+  dt text;
+  result text;
+BEGIN
+  IF p_value IS NULL THEN
+    RETURN NULL;
+  END IF;
+
+  dt := p_value->>'data_type';
+
+  IF dt IN ('TEXT', 'DATE', 'DATETIME', 'SINGLESELECT') THEN
+    result := btrim(p_value->>'value');
+    IF result = '' THEN
+      RETURN NULL;
+    END IF;
+    RETURN result;
+  END IF;
+
+  IF dt IN ('NUMBER', 'BOOLEAN') THEN
+    -- p_value->'value' preserves native JSON scalar type; ::text yields a stable string
+    result := (p_value->'value')::text;
+    result := btrim(result);
+    IF result = '' THEN
+      RETURN NULL;
+    END IF;
+    RETURN result;
+  END IF;
+
+  IF dt = 'MULTISELECT' THEN
+    -- Join array elements with newline. If empty array, result becomes NULL.
+    SELECT NULLIF(btrim(string_agg(elem, E'\n')), '')
+      INTO result
+      FROM jsonb_array_elements_text(p_value->'value') AS t(elem);
+
+    RETURN result;
+  END IF;
+
+  -- Unknown/unsupported type: do not index/search
+  RETURN NULL;
+END;
+$$;
+
+-- ----------------------------------------------------------------------
+-- Trigger function: schema_composition.tg_set_form_submission_value_search_text
+-- ----------------------------------------------------------------------
+-- PURPOSE
+--   Ensures value_search_text stays in sync whenever value changes.
+-- ----------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION schema_composition.tg_set_form_submission_value_search_text()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  -- Always recompute from NEW.value (handles INSERT and UPDATE)
+  NEW.value_search_text := schema_composition.compute_form_submission_value_search_text(NEW.value);
+  RETURN NEW;
+END;
+$$;
+
+
+DROP TRIGGER IF EXISTS trg_form_submission_value_set_search_text
+ON schema_composition.form_submission_value;
+
+CREATE TRIGGER trg_form_submission_value_set_search_text
+BEFORE INSERT OR UPDATE OF value
+ON schema_composition.form_submission_value
+FOR EACH ROW
+EXECUTE FUNCTION schema_composition.tg_set_form_submission_value_search_text();
+
 -- END original form_schema.sql
--- ======================================================================
--- PHASE 1: Correctness fixes and hardening
--- ======================================================================
-
-
--- ----------------------------------------------------------------------
--- Table: dyno_form.field_def_option
--- ----------------------------------------------------------------------
-COMMENT ON COLUMN dyno_form.field_def_option.tenant_id IS
-    'Tenant boundary. Options are scoped to a tenant for isolation and customization.';
-COMMENT ON COLUMN dyno_form.field_def_option.field_def_id IS
-    'Identifier of the parent field definition this option belongs to.';
-COMMENT ON COLUMN dyno_form.field_def_option.option_key IS
-    'Stable key used in API values. Must be unique within a field definition and tenant.';
-COMMENT ON COLUMN dyno_form.field_def_option.option_label IS
-    'Display value shown in UI for this option.';
-COMMENT ON COLUMN dyno_form.field_def_option.option_order IS
-    'Ordering index controlling display order in UI. Must be non-negative and unique within (tenant_id, field_def_id).';
-COMMENT ON COLUMN dyno_form.field_def_option.created_at IS
-    'Row creation timestamp.';
-COMMENT ON COLUMN dyno_form.field_def_option.created_by IS
-    'Optional actor identifier (username/service) that created the row.';
-
-
-
-
--- ----------------------------------------------------------------------
--- Table: dyno_form.form_panel
--- ----------------------------------------------------------------------
-COMMENT ON COLUMN dyno_form.form_panel.id IS
-    'Primary row identifier (UUID). Immutable technical identity.';
-COMMENT ON COLUMN dyno_form.form_panel.tenant_id IS
-    'Tenant boundary. All form panels are scoped to a tenant for isolation and access control.';
-COMMENT ON COLUMN dyno_form.form_panel.form_id IS
-    'Owning form ID. The form that this panel belongs to.';
-COMMENT ON COLUMN dyno_form.form_panel.panel_key IS
-    'Stable identifier for this panel within (tenant_id, form_id). Used by builders and APIs for deterministic lookup.';
-COMMENT ON COLUMN dyno_form.form_panel.panel_label IS
-    'Human-readable label shown in UI. Optional; if provided, must be non-blank.';
-COMMENT ON COLUMN dyno_form.form_panel.ui_config IS
-    'JSONB UI configuration for layout, styling, and container-level rendering hints. Uses jsonb_merge_default semantics for PATCH merges: arrays are replaced and null values remove keys.';
-COMMENT ON COLUMN dyno_form.form_panel.nested_overrides IS
-    'JSONB document containing selector-addressed PATCH overrides applied to embedded component trees within this form panel. Uses jsonb_merge_default semantics for patch merges; arrays are replaced and null values remove keys.';
-COMMENT ON COLUMN dyno_form.form_panel.created_at IS
-    'Row creation timestamp.';
-COMMENT ON COLUMN dyno_form.form_panel.updated_at IS
-    'Row last-updated timestamp. Typically maintained by application code or a trigger.';
-COMMENT ON COLUMN dyno_form.form_panel.created_by IS
-    'Optional actor identifier (username/service) that created the row.';
-COMMENT ON COLUMN dyno_form.form_panel.updated_by IS
-    'Optional actor identifier (username/service) that last updated the row.';
-
--- ----------------------------------------------------------------------
--- Table: dyno_form.form_panel_field
--- ----------------------------------------------------------------------
-COMMENT ON COLUMN dyno_form.form_panel_field.id IS
-    'Primary row identifier (UUID). Immutable technical identity.';
-COMMENT ON COLUMN dyno_form.form_panel_field.tenant_id IS
-    'Tenant boundary. All rows are scoped to a tenant for isolation and access control.';
-COMMENT ON COLUMN dyno_form.form_panel_field.panel_id IS
-    'Owning form panel ID (dyno_form.form_panel.id) that this field placement belongs to.';
-COMMENT ON COLUMN dyno_form.form_panel_field.field_def_id IS
-    'Identifier of the catalog field definition (dyno_form.field_def.id) used as the source for this field placement.';
-COMMENT ON COLUMN dyno_form.form_panel_field.field_order IS
-    'Display/tab order within the form panel. Null means unspecified; otherwise a non-negative integer unique within (tenant_id, panel_id).';
-COMMENT ON COLUMN dyno_form.form_panel_field.ui_config IS
-    'JSONB UI configuration overrides applied on top of the imprinted field_config.field.ui_config for this specific form placement. Uses jsonb_merge_default semantics for PATCH merges: arrays are replaced and null values remove keys.';
-COMMENT ON COLUMN dyno_form.form_panel_field.field_config IS
-    'Imprinted JSONB snapshot of the effective field definition for this form placement, including options. Enforced by jsonb_matches_schema. Uses jsonb_merge_default semantics for PATCH merges.';
-COMMENT ON COLUMN dyno_form.form_panel_field.field_config_hash IS
-    'SHA-256 hash (64 hex characters) of the current field_config JSON. Used to detect edits and support diff workflows.';
-COMMENT ON COLUMN dyno_form.form_panel_field.source_field_def_hash IS
-    'SHA-256 hash (64 hex characters) of the canonical source snapshot from field_def + field_def_option at imprint time. Used to detect catalog drift.';
-COMMENT ON COLUMN dyno_form.form_panel_field.last_imprinted_at IS
-    'Timestamp when field_config was last imprinted from the catalog source.';
-COMMENT ON COLUMN dyno_form.form_panel_field.created_at IS
-    'Row creation timestamp.';
-COMMENT ON COLUMN dyno_form.form_panel_field.updated_at IS
-    'Row last-updated timestamp. Typically maintained by application code or a trigger.';
-COMMENT ON COLUMN dyno_form.form_panel_field.created_by IS
-    'Optional actor identifier (username/service) that created the row.';
-COMMENT ON COLUMN dyno_form.form_panel_field.updated_by IS
-    'Optional actor identifier (username/service) that last updated the row.';
-
-
--- ----------------------------------------------------------------------
--- Table: dyno_form.form_catalog_category
--- ----------------------------------------------------------------------
-COMMENT ON COLUMN dyno_form.form_catalog_category.created_at IS
-    'Row creation timestamp.';
-COMMENT ON COLUMN dyno_form.form_catalog_category.updated_at IS
-    'Row last-updated timestamp. Typically maintained by application code or a trigger.';
-COMMENT ON COLUMN dyno_form.form_catalog_category.created_by IS
-    'Optional actor identifier (username/service) that created the row.';
-COMMENT ON COLUMN dyno_form.form_catalog_category.updated_by IS
-    'Optional actor identifier (username/service) that last updated the row.';
-
 
 -- ======================================================================
 -- PHASE 2: Marketplace-grade additions
 -- ======================================================================
 
 -- ----------------------------------------------------------------------
--- Table: dyno_form.form_panel_component
+-- Table: schema_composition.form_panel_component
 -- ----------------------------------------------------------------------
 -- PURPOSE
 --   Represents the placement of a reusable catalog component onto a specific
@@ -2922,14 +3087,12 @@ COMMENT ON COLUMN dyno_form.form_catalog_category.updated_by IS
 -- CORE CONCEPTS
 --   - Instance identity:
 --       * Each placement represents a distinct instance of a reusable component.
---       * instance_key provides a stable, deterministic identifier for this
---         component instance within (tenant_id, form_panel_id).
 --
 --   - Composition boundary:
 --       * A form_panel may embed zero or more reusable components.
 --       * This table acts as the join/composition layer between:
---           - dyno_form.form_panel (form structure)
---           - dyno_form.component (reusable catalog component)
+--           - schema_composition.form_panel (form structure)
+--           - schema_composition.component (reusable catalog component)
 --
 --   - Configuration layering:
 --       * ui_config stores placement-level UI overrides.
@@ -2941,14 +3104,12 @@ COMMENT ON COLUMN dyno_form.form_catalog_category.updated_by IS
 --   - All foreign keys are tenant-safe composites to prevent cross-tenant leakage.
 --
 -- IMPORTANT INVARIANTS
---   - instance_key must be unique within (tenant_id, form_panel_id).
---   - instance_key must be stable and deterministic; it must NEVER be derived
 --     from labels or user-facing text.
---   - component_id and form_panel_id must belong to the same tenant_id.
+--   - component_id and panel_id must belong to the same tenant_id.
 --   - updated_at is maintained by application code or a trigger (not defined here).
 -- ----------------------------------------------------------------------
 
-CREATE TABLE IF NOT EXISTS dyno_form.form_panel_component (
+CREATE TABLE IF NOT EXISTS schema_composition.form_panel_component (
     -- ------------------------------------------------------------------
     -- Primary identity
     -- ------------------------------------------------------------------
@@ -2969,34 +3130,18 @@ CREATE TABLE IF NOT EXISTS dyno_form.form_panel_component (
 
     -- The form panel on which this component is placed.
     -- Must belong to the same tenant_id.
-    form_panel_id UUID NOT NULL,
+    panel_id UUID NOT NULL,
 
     -- The reusable catalog component being placed.
     -- Must belong to the same tenant_id.
     component_id UUID NOT NULL,
 
     -- ------------------------------------------------------------------
-    -- Instance identity
-    -- ------------------------------------------------------------------
-
-    -- Stable key uniquely identifying this component instance within
-    -- (tenant_id, form_panel_id).
-    --
-    -- Used for:
-    --   - field_path construction during submissions
-    --   - selector-based override addressing
-    --   - deterministic diffing and patch application
-    --
-    -- MUST be stable and deterministic.
-    -- MUST NOT be derived from labels or display text.
-    instance_key VARCHAR(200) NOT NULL,
-
-    -- ------------------------------------------------------------------
     -- Configuration overrides
     -- ------------------------------------------------------------------
 
     -- Optional JSONB UI configuration overrides applied at the placement level.
-    -- These overrides are layered on top of the component’s catalog ui_config.
+    -- These overrides are layered on top of the component's catalog ui_config.
     --
     -- PATCH semantics:
     --   - Objects are merged
@@ -3041,25 +3186,20 @@ CREATE TABLE IF NOT EXISTS dyno_form.form_panel_component (
     CONSTRAINT ux_form_panel_component_tenant_id
         UNIQUE (tenant_id, id),
 
-    -- Ensures instance_key uniqueness within a single form panel.
-    -- Prevents ambiguous component instances within the same panel.
-    CONSTRAINT uq_form_panel_component_instance_key
-        UNIQUE (tenant_id, form_panel_id, instance_key),
-
     -- ------------------------------------------------------------------
     -- Foreign keys (tenant-safe)
     -- ------------------------------------------------------------------
 
     -- Tenant-safe FK enforcing form_panel ownership.
     CONSTRAINT fk_form_panel_component_form_panel_tenant
-        FOREIGN KEY (tenant_id, form_panel_id)
-        REFERENCES dyno_form.form_panel (tenant_id, id)
+        FOREIGN KEY (tenant_id, panel_id)
+        REFERENCES schema_composition.form_panel (tenant_id, id)
         ON DELETE CASCADE,
 
     -- Tenant-safe FK enforcing component ownership.
     CONSTRAINT fk_form_panel_component_component_tenant
         FOREIGN KEY (tenant_id, component_id)
-        REFERENCES dyno_form.component (tenant_id, id)
+        REFERENCES schema_composition.component (tenant_id, id)
         ON DELETE RESTRICT
 );
 
@@ -3067,52 +3207,45 @@ CREATE TABLE IF NOT EXISTS dyno_form.form_panel_component (
 -- Indexes
 -- ----------------------------------------------------------------------
 
--- Fast lookup of all component placements for a given form panel.
-CREATE INDEX IF NOT EXISTS ix_form_panel_component_tenant_panel
-    ON dyno_form.form_panel_component (tenant_id, form_panel_id);
-
 -- Fast lookup of all form placements for a given component.
 CREATE INDEX IF NOT EXISTS ix_form_panel_component_tenant_component
-    ON dyno_form.form_panel_component (tenant_id, component_id);
+    ON schema_composition.form_panel_component (tenant_id, component_id);
 
 -- ----------------------------------------------------------------------
 -- Table and column comments
 -- ----------------------------------------------------------------------
 
-COMMENT ON TABLE dyno_form.form_panel_component IS
-'Placement of a reusable catalog component onto a specific form panel. Acts as the composition layer between form structure and reusable components. Provides a stable instance_key for deterministic addressing, submission path construction, and override patching.';
+COMMENT ON TABLE schema_composition.form_panel_component IS
+'Placement of a reusable catalog component onto a specific form panel. Acts as the composition layer between form structure and reusable components.';
 
-COMMENT ON COLUMN dyno_form.form_panel_component.id IS
+COMMENT ON COLUMN schema_composition.form_panel_component.id IS
 'Primary row identifier (UUID). Immutable technical identity for the component placement.';
 
-COMMENT ON COLUMN dyno_form.form_panel_component.tenant_id IS
+COMMENT ON COLUMN schema_composition.form_panel_component.tenant_id IS
 'Tenant boundary. All component placements are strictly scoped to a tenant for isolation and access control.';
 
-COMMENT ON COLUMN dyno_form.form_panel_component.form_panel_id IS
-'Identifier of the owning form panel (dyno_form.form_panel.id) on which this component is placed.';
+COMMENT ON COLUMN schema_composition.form_panel_component.panel_id IS
+'Identifier of the owning form panel (schema_composition.form_panel.id) on which this component is placed.';
 
-COMMENT ON COLUMN dyno_form.form_panel_component.component_id IS
-'Identifier of the reusable catalog component (dyno_form.component.id) being placed on the form panel.';
+COMMENT ON COLUMN schema_composition.form_panel_component.component_id IS
+'Identifier of the reusable catalog component (schema_composition.component.id) being placed on the form panel.';
 
-COMMENT ON COLUMN dyno_form.form_panel_component.instance_key IS
-'Stable, deterministic key uniquely identifying this component instance within (tenant_id, form_panel_id). Used for field_path construction, selector-based overrides, and diff/reset workflows. Must never be derived from labels.';
-
-COMMENT ON COLUMN dyno_form.form_panel_component.ui_config IS
+COMMENT ON COLUMN schema_composition.form_panel_component.ui_config IS
 'Optional JSONB UI configuration overrides applied at the component placement level. PATCH semantics: objects merge, arrays replace, null values remove keys.';
 
-COMMENT ON COLUMN dyno_form.form_panel_component.nested_overrides IS
+COMMENT ON COLUMN schema_composition.form_panel_component.nested_overrides IS
 'Optional JSONB document containing selector-addressed PATCH overrides applied within the embedded component tree (panels, fields, actions) without mutating catalog definitions.';
 
-COMMENT ON COLUMN dyno_form.form_panel_component.created_at IS
+COMMENT ON COLUMN schema_composition.form_panel_component.created_at IS
 'Row creation timestamp.';
 
-COMMENT ON COLUMN dyno_form.form_panel_component.updated_at IS
+COMMENT ON COLUMN schema_composition.form_panel_component.updated_at IS
 'Row last-updated timestamp. Typically maintained by application code or a trigger.';
 
-COMMENT ON COLUMN dyno_form.form_panel_component.created_by IS
+COMMENT ON COLUMN schema_composition.form_panel_component.created_by IS
 'Optional actor identifier (username/service) that created the component placement.';
 
-COMMENT ON COLUMN dyno_form.form_panel_component.updated_by IS
+COMMENT ON COLUMN schema_composition.form_panel_component.updated_by IS
 'Optional actor identifier (username/service) that last updated the component placement.';
 
 
@@ -3120,7 +3253,7 @@ COMMENT ON COLUMN dyno_form.form_panel_component.updated_by IS
 -- PHASE 3: Deterministic JSONB merge utilities
 -- ======================================================================
 
-CREATE OR REPLACE FUNCTION dyno_form.jsonb_merge_deterministic(
+CREATE OR REPLACE FUNCTION schema_composition.jsonb_merge_deterministic(
     target jsonb,
     patch jsonb,
     null_means_remove boolean DEFAULT true,
@@ -3162,7 +3295,7 @@ BEGIN
             IF jsonb_typeof(value) = 'object' AND jsonb_typeof(target_val) = 'object' THEN
                 result := result || jsonb_build_object(
                     key,
-                    dyno_form.jsonb_merge_deterministic(target_val, value, null_means_remove, array_mode)
+                    schema_composition.jsonb_merge_deterministic(target_val, value, null_means_remove, array_mode)
                 );
             ELSIF jsonb_typeof(value) = 'array' AND jsonb_typeof(target_val) = 'array' THEN
                 IF upper(array_mode) = 'APPEND' THEN
@@ -3179,7 +3312,7 @@ BEGIN
 END;
 $$;
 
-CREATE OR REPLACE FUNCTION dyno_form.jsonb_merge_default(
+CREATE OR REPLACE FUNCTION schema_composition.jsonb_merge_default(
     target jsonb,
     patch jsonb
 ) RETURNS jsonb
@@ -3188,13 +3321,13 @@ IMMUTABLE
 STRICT
 AS $$
 BEGIN
-    RETURN dyno_form.jsonb_merge_deterministic(target, patch, true, 'REPLACE');
+    RETURN schema_composition.jsonb_merge_deterministic(target, patch, true, 'REPLACE');
 END;
 $$;
 
-COMMENT ON FUNCTION dyno_form.jsonb_merge_deterministic(jsonb, jsonb, boolean, text) IS
+COMMENT ON FUNCTION schema_composition.jsonb_merge_deterministic(jsonb, jsonb, boolean, text) IS
     'Deterministically merges two JSONB documents with configurable null and array semantics. Objects are merged recursively; arrays are either replaced or appended depending on array_mode; nulls remove keys when null_means_remove is true or set keys to JSON null otherwise. Keys are processed in sorted order for deterministic results.';
-COMMENT ON FUNCTION dyno_form.jsonb_merge_default(jsonb, jsonb) IS
+COMMENT ON FUNCTION schema_composition.jsonb_merge_default(jsonb, jsonb) IS
     'Convenience wrapper around jsonb_merge_deterministic that uses platform defaults: arrays are replaced and null values remove keys.';
 
 
@@ -3239,7 +3372,7 @@ COMMENT ON FUNCTION dyno_form.jsonb_merge_default(jsonb, jsonb) IS
 
 
 -- ----------------------------------------------------------------------
--- Trigger function: dyno_form.block_writes_when_published
+-- Trigger function: schema_composition.block_writes_when_published
 -- ----------------------------------------------------------------------
 --
 -- FUNCTIONALITY
@@ -3281,7 +3414,7 @@ COMMENT ON FUNCTION dyno_form.jsonb_merge_default(jsonb, jsonb) IS
 --
 -- ----------------------------------------------------------------------
 
-CREATE OR REPLACE FUNCTION dyno_form.block_writes_when_published()
+CREATE OR REPLACE FUNCTION schema_composition.block_writes_when_published()
 RETURNS trigger
 LANGUAGE plpgsql
 AS $$
@@ -3315,7 +3448,7 @@ BEGIN
 END;
 $$;
 
-COMMENT ON FUNCTION dyno_form.block_writes_when_published() IS
+COMMENT ON FUNCTION schema_composition.block_writes_when_published() IS
 'Trigger function that enforces immutability for published artifacts. When OLD.is_published = true, it blocks UPDATE and DELETE operations by raising a check_violation exception. Intended for attachment via BEFORE UPDATE/DELETE triggers on top-level artifact tables that include an is_published boolean (e.g., field definitions, components, forms). Provides clear diagnostics (schema/table/operation) and a workflow hint directing callers to clone or unpublish before modifying.';
 
 
@@ -3327,9 +3460,9 @@ COMMENT ON FUNCTION dyno_form.block_writes_when_published() IS
 -- that support publishing semantics.
 --
 -- Covered tables (top-level published objects):
---   - dyno_form.field_def
---   - dyno_form.component
---   - dyno_form.form
+--   - schema_composition.field_def
+--   - schema_composition.component
+--   - schema_composition.form
 --
 -- Each table receives:
 --   - BEFORE UPDATE trigger
@@ -3341,38 +3474,38 @@ COMMENT ON FUNCTION dyno_form.block_writes_when_published() IS
 -- once true, the row represents a stable, externally consumable artifact.
 -- ----------------------------------------------------------------------
 
--- dyno_form.field_def
+-- schema_composition.field_def
 CREATE TRIGGER tr_block_writes_when_published
-BEFORE UPDATE ON dyno_form.field_def
+BEFORE UPDATE ON schema_composition.field_def
 FOR EACH ROW
-EXECUTE FUNCTION dyno_form.block_writes_when_published();
+EXECUTE FUNCTION schema_composition.block_writes_when_published();
 
 CREATE TRIGGER tr_block_deletes_when_published
-BEFORE DELETE ON dyno_form.field_def
+BEFORE DELETE ON schema_composition.field_def
 FOR EACH ROW
-EXECUTE FUNCTION dyno_form.block_writes_when_published();
+EXECUTE FUNCTION schema_composition.block_writes_when_published();
 
--- dyno_form.component
+-- schema_composition.component
 CREATE TRIGGER tr_block_writes_when_published
-BEFORE UPDATE ON dyno_form.component
+BEFORE UPDATE ON schema_composition.component
 FOR EACH ROW
-EXECUTE FUNCTION dyno_form.block_writes_when_published();
+EXECUTE FUNCTION schema_composition.block_writes_when_published();
 
 CREATE TRIGGER tr_block_deletes_when_published
-BEFORE DELETE ON dyno_form.component
+BEFORE DELETE ON schema_composition.component
 FOR EACH ROW
-EXECUTE FUNCTION dyno_form.block_writes_when_published();
+EXECUTE FUNCTION schema_composition.block_writes_when_published();
 
--- dyno_form.form
+-- schema_composition.form
 CREATE TRIGGER tr_block_writes_when_published
-BEFORE UPDATE ON dyno_form.form
+BEFORE UPDATE ON schema_composition.form
 FOR EACH ROW
-EXECUTE FUNCTION dyno_form.block_writes_when_published();
+EXECUTE FUNCTION schema_composition.block_writes_when_published();
 
 CREATE TRIGGER tr_block_deletes_when_published
-BEFORE DELETE ON dyno_form.form
+BEFORE DELETE ON schema_composition.form
 FOR EACH ROW
-EXECUTE FUNCTION dyno_form.block_writes_when_published();
+EXECUTE FUNCTION schema_composition.block_writes_when_published();
 
 
 -- ======================================================================
@@ -3381,7 +3514,7 @@ EXECUTE FUNCTION dyno_form.block_writes_when_published();
 --
 -- PURPOSE
 -- -------
--- Enforces immutability of a form’s structural hierarchy once the parent
+-- Enforces immutability of a form's structural hierarchy once the parent
 -- form has been marked as published.
 --
 -- This prevents in-place modification or deletion of:
@@ -3400,22 +3533,22 @@ EXECUTE FUNCTION dyno_form.block_writes_when_published();
 -- SCOPE
 -- -----
 -- Covered child tables (form structure):
---   - dyno_form.form_panel
---   - dyno_form.form_panel_field
---   - dyno_form.form_panel_component
+--   - schema_composition.form_panel
+--   - schema_composition.form_panel_field
+--   - schema_composition.form_panel_component
 --
 -- DESIGN NOTES
 -- ------------
 -- * Implemented as a BEFORE UPDATE / BEFORE DELETE trigger on each child table.
 -- * Child tables do not need is_published themselves; publish state is derived
---   from the owning dyno_form.form.
+--   from the owning schema_composition.form.
 -- * Tenant isolation is enforced via (tenant_id, id) join constraints.
 --
 -- ======================================================================
 
 
 -- ----------------------------------------------------------------------
--- Trigger function: dyno_form.block_writes_when_parent_form_published
+-- Trigger function: schema_composition.block_writes_when_parent_form_published
 -- ----------------------------------------------------------------------
 --
 -- FUNCTIONALITY
@@ -3425,11 +3558,11 @@ EXECUTE FUNCTION dyno_form.block_writes_when_published();
 --
 -- PARENT RESOLUTION STRATEGY
 -- --------------------------
--- 1) dyno_form.form_panel
+-- 1) schema_composition.form_panel
 --    - child row contains form_id directly
 --    - lookup: form(tenant_id, id) = (OLD.tenant_id, OLD.form_id)
 --
--- 2) dyno_form.form_panel_field, dyno_form.form_panel_component
+-- 2) schema_composition.form_panel_field, schema_composition.form_panel_component
 --    - child row contains panel_id
 --    - resolve form via form_panel then join to form
 --
@@ -3441,7 +3574,7 @@ EXECUTE FUNCTION dyno_form.block_writes_when_published();
 --
 -- ----------------------------------------------------------------------
 
-CREATE OR REPLACE FUNCTION dyno_form.block_writes_when_parent_form_published()
+CREATE OR REPLACE FUNCTION schema_composition.block_writes_when_parent_form_published()
 RETURNS trigger
 LANGUAGE plpgsql
 AS $$
@@ -3452,15 +3585,15 @@ BEGIN
   IF TG_TABLE_NAME = 'form_panel' THEN
     SELECT f.is_published
       INTO parent_published
-      FROM dyno_form.form f
+      FROM schema_composition.form f
      WHERE f.tenant_id = OLD.tenant_id
        AND f.id = OLD.form_id;
 
   ELSIF TG_TABLE_NAME IN ('form_panel_field', 'form_panel_component') THEN
     SELECT f.is_published
       INTO parent_published
-      FROM dyno_form.form_panel p
-      JOIN dyno_form.form f
+      FROM schema_composition.form_panel p
+      JOIN schema_composition.form f
         ON f.tenant_id = p.tenant_id
        AND f.id = p.form_id
      WHERE p.tenant_id = OLD.tenant_id
@@ -3469,7 +3602,7 @@ BEGIN
   ELSE
     -- Misconfiguration guardrail: do not silently allow writes.
     RAISE EXCEPTION 'Trigger function % attached to unsupported table %.%',
-      'dyno_form.block_writes_when_parent_form_published()',
+      'schema_composition.block_writes_when_parent_form_published()',
       TG_TABLE_SCHEMA,
       TG_TABLE_NAME
       USING ERRCODE = 'invalid_parameter_value';
@@ -3500,7 +3633,7 @@ END;
 $$;
 
 
-COMMENT ON FUNCTION dyno_form.block_writes_when_parent_form_published() IS
+COMMENT ON FUNCTION schema_composition.block_writes_when_parent_form_published() IS
 'Trigger function that enforces immutability of form structure rows when the owning parent form is published. Used as a BEFORE UPDATE/DELETE trigger on form child tables (e.g., form_panel, form_panel_field, form_panel_component). Resolves parent publish state using tenant-safe joins (either directly via form_id or indirectly via panel_id -> form_panel -> form). If the parent form is published, blocks the write with check_violation. Includes a guardrail that raises invalid_parameter_value if attached to an unsupported table to prevent silent misconfiguration.';
 
 -- ----------------------------------------------------------------------
@@ -3513,38 +3646,38 @@ COMMENT ON FUNCTION dyno_form.block_writes_when_parent_form_published() IS
 --
 -- ----------------------------------------------------------------------
 
--- dyno_form.form_panel
+-- schema_composition.form_panel
 CREATE TRIGGER tr_block_writes_when_parent_form_published
-BEFORE UPDATE ON dyno_form.form_panel
+BEFORE UPDATE ON schema_composition.form_panel
 FOR EACH ROW
-EXECUTE FUNCTION dyno_form.block_writes_when_parent_form_published();
+EXECUTE FUNCTION schema_composition.block_writes_when_parent_form_published();
 
 CREATE TRIGGER tr_block_deletes_when_parent_form_published
-BEFORE DELETE ON dyno_form.form_panel
+BEFORE DELETE ON schema_composition.form_panel
 FOR EACH ROW
-EXECUTE FUNCTION dyno_form.block_writes_when_parent_form_published();
+EXECUTE FUNCTION schema_composition.block_writes_when_parent_form_published();
 
--- dyno_form.form_panel_field
+-- schema_composition.form_panel_field
 CREATE TRIGGER tr_block_writes_when_parent_form_published
-BEFORE UPDATE ON dyno_form.form_panel_field
+BEFORE UPDATE ON schema_composition.form_panel_field
 FOR EACH ROW
-EXECUTE FUNCTION dyno_form.block_writes_when_parent_form_published();
+EXECUTE FUNCTION schema_composition.block_writes_when_parent_form_published();
 
 CREATE TRIGGER tr_block_deletes_when_parent_form_published
-BEFORE DELETE ON dyno_form.form_panel_field
+BEFORE DELETE ON schema_composition.form_panel_field
 FOR EACH ROW
-EXECUTE FUNCTION dyno_form.block_writes_when_parent_form_published();
+EXECUTE FUNCTION schema_composition.block_writes_when_parent_form_published();
 
--- dyno_form.form_panel_component
+-- schema_composition.form_panel_component
 CREATE TRIGGER tr_block_writes_when_parent_form_published
-BEFORE UPDATE ON dyno_form.form_panel_component
+BEFORE UPDATE ON schema_composition.form_panel_component
 FOR EACH ROW
-EXECUTE FUNCTION dyno_form.block_writes_when_parent_form_published();
+EXECUTE FUNCTION schema_composition.block_writes_when_parent_form_published();
 
 CREATE TRIGGER tr_block_deletes_when_parent_form_published
-BEFORE DELETE ON dyno_form.form_panel_component
+BEFORE DELETE ON schema_composition.form_panel_component
 FOR EACH ROW
-EXECUTE FUNCTION dyno_form.block_writes_when_parent_form_published();
+EXECUTE FUNCTION schema_composition.block_writes_when_parent_form_published();
 
 
 -- ======================================================================
@@ -3570,21 +3703,21 @@ EXECUTE FUNCTION dyno_form.block_writes_when_parent_form_published();
 -- SCOPE
 -- -----
 -- Covered child tables (component structure):
---   - dyno_form.component_panel
---   - dyno_form.component_panel_field
+--   - schema_composition.component_panel
+--   - schema_composition.component_panel_field
 --
 -- DESIGN NOTES
 -- ------------
 -- * Implemented as a BEFORE UPDATE / BEFORE DELETE trigger on each child table.
 -- * Child tables do not need is_published themselves; publish state is derived
---   from the owning dyno_form.component.
+--   from the owning schema_composition.component.
 -- * Tenant isolation is enforced via tenant-safe joins.
 --
 -- ======================================================================
 
 
 -- ----------------------------------------------------------------------
--- Trigger function: dyno_form.block_writes_when_parent_component_published
+-- Trigger function: schema_composition.block_writes_when_parent_component_published
 -- ----------------------------------------------------------------------
 --
 -- FUNCTIONALITY
@@ -3594,11 +3727,11 @@ EXECUTE FUNCTION dyno_form.block_writes_when_parent_form_published();
 --
 -- PARENT RESOLUTION STRATEGY
 -- --------------------------
--- 1) dyno_form.component_panel
+-- 1) schema_composition.component_panel
 --    - child row contains component_id directly
 --    - lookup: component(tenant_id, id) = (OLD.tenant_id, OLD.component_id)
 --
--- 2) dyno_form.component_panel_field
+-- 2) schema_composition.component_panel_field
 --    - child row contains panel_id
 --    - resolve component via component_panel then join to component
 --
@@ -3610,7 +3743,7 @@ EXECUTE FUNCTION dyno_form.block_writes_when_parent_form_published();
 --
 -- ----------------------------------------------------------------------
 
-CREATE OR REPLACE FUNCTION dyno_form.block_writes_when_parent_component_published()
+CREATE OR REPLACE FUNCTION schema_composition.block_writes_when_parent_component_published()
 RETURNS trigger
 LANGUAGE plpgsql
 AS $$
@@ -3621,15 +3754,15 @@ BEGIN
   IF TG_TABLE_NAME = 'component_panel' THEN
     SELECT c.is_published
       INTO parent_published
-      FROM dyno_form.component c
+      FROM schema_composition.component c
      WHERE c.tenant_id = OLD.tenant_id
        AND c.id = OLD.component_id;
 
   ELSIF TG_TABLE_NAME = 'component_panel_field' THEN
     SELECT c.is_published
       INTO parent_published
-      FROM dyno_form.component_panel p
-      JOIN dyno_form.component c
+      FROM schema_composition.component_panel p
+      JOIN schema_composition.component c
         ON c.tenant_id = p.tenant_id
        AND c.id = p.component_id
      WHERE p.tenant_id = OLD.tenant_id
@@ -3638,7 +3771,7 @@ BEGIN
   ELSE
     -- Misconfiguration guardrail: do not silently allow writes.
     RAISE EXCEPTION 'Trigger function % attached to unsupported table %.%',
-      'dyno_form.block_writes_when_parent_component_published()',
+      'schema_composition.block_writes_when_parent_component_published()',
       TG_TABLE_SCHEMA,
       TG_TABLE_NAME
       USING ERRCODE = 'invalid_parameter_value';
@@ -3669,7 +3802,7 @@ END;
 $$;
 
 
-COMMENT ON FUNCTION dyno_form.block_writes_when_parent_component_published() IS
+COMMENT ON FUNCTION schema_composition.block_writes_when_parent_component_published() IS
 'Trigger function that enforces immutability of component structure rows when the owning parent component is published. Used as a BEFORE UPDATE/DELETE trigger on component child tables (e.g., component_panel, component_panel_field). Resolves parent publish state using tenant-safe joins (either directly via component_id or indirectly via panel_id -> component_panel -> component). If the parent component is published, blocks the write with check_violation. Includes a guardrail that raises invalid_parameter_value if attached to an unsupported table to prevent silent misconfiguration.';
 
 
@@ -3683,27 +3816,27 @@ COMMENT ON FUNCTION dyno_form.block_writes_when_parent_component_published() IS
 --
 -- ----------------------------------------------------------------------
 
--- dyno_form.component_panel
+-- schema_composition.component_panel
 CREATE TRIGGER tr_block_writes_when_parent_component_published
-BEFORE UPDATE ON dyno_form.component_panel
+BEFORE UPDATE ON schema_composition.component_panel
 FOR EACH ROW
-EXECUTE FUNCTION dyno_form.block_writes_when_parent_component_published();
+EXECUTE FUNCTION schema_composition.block_writes_when_parent_component_published();
 
 CREATE TRIGGER tr_block_deletes_when_parent_component_published
-BEFORE DELETE ON dyno_form.component_panel
+BEFORE DELETE ON schema_composition.component_panel
 FOR EACH ROW
-EXECUTE FUNCTION dyno_form.block_writes_when_parent_component_published();
+EXECUTE FUNCTION schema_composition.block_writes_when_parent_component_published();
 
--- dyno_form.component_panel_field
+-- schema_composition.component_panel_field
 CREATE TRIGGER tr_block_writes_when_parent_component_published
-BEFORE UPDATE ON dyno_form.component_panel_field
+BEFORE UPDATE ON schema_composition.component_panel_field
 FOR EACH ROW
-EXECUTE FUNCTION dyno_form.block_writes_when_parent_component_published();
+EXECUTE FUNCTION schema_composition.block_writes_when_parent_component_published();
 
 CREATE TRIGGER tr_block_deletes_when_parent_component_published
-BEFORE DELETE ON dyno_form.component_panel_field
+BEFORE DELETE ON schema_composition.component_panel_field
 FOR EACH ROW
-EXECUTE FUNCTION dyno_form.block_writes_when_parent_component_published();
+EXECUTE FUNCTION schema_composition.block_writes_when_parent_component_published();
 
 
 -- ======================================================================

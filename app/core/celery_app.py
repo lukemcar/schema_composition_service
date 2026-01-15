@@ -14,7 +14,7 @@ from app.core.telemetry import init_tracing, instrument_celery
 # does not affect routing.  Use a descriptive name to match your
 # service; when extending this template copy this line and adjust
 # accordingly.
-celery_app = Celery("my-entity-service")
+celery_app = Celery("schema-composition-service")
 
 # --------------------------------------------------------------------
 # Core broker / backend config (RabbitMQ 4.2.1, JSON only, no pickle)
@@ -35,423 +35,423 @@ celery_app.conf.update(
 )
 
 # --------------------------------------------------------------------
-# Exchanges, queues, and routing (simplified for MyEntity)
+# Exchanges, queues, and routing (simplified for SchemaComposition)
 # --------------------------------------------------------------------
 # Use a single topic exchange for all events.  We define one domain queue
-# for ``my-entity`` events and a corresponding dead letter queue.  When
+# for ``schema-composition`` events and a corresponding dead letter queue.  When
 # extending the service to additional domains, add queues and routes here
 # following the same pattern.
 
-conversa_exchange = Exchange("conversa", type="topic")
-conversa_dlx = Exchange("conversa.dlx", type="topic")
+conversa_exchange = Exchange("SchemaComposition", type="topic")
+conversa_dlx = Exchange("SchemaComposition.dlx", type="topic")
 
 celery_app.conf.task_default_exchange = conversa_exchange.name
 celery_app.conf.task_default_exchange_type = conversa_exchange.type
-celery_app.conf.task_default_routing_key = "conversa.default"
+celery_app.conf.task_default_routing_key = "SchemaComposition.default"
 
 celery_app.conf.task_queues = (
     # Generic catch‑all queue
     Queue(
-        "conversa.default",
+        "SchemaComposition.default",
         exchange=conversa_exchange,
-        routing_key="conversa.default",
+        routing_key="SchemaComposition.default",
     ),
-    # Domain queue for MyEntity events
+    # Domain queue for SchemaComposition events
     Queue(
-        "conversa.my-entity",
+        "SchemaComposition.schema-composition",
         exchange=conversa_exchange,
-        routing_key="conversa.my-entity.#",
+        routing_key="SchemaComposition.schema-composition.#",
         queue_arguments={
             "x-dead-letter-exchange": conversa_dlx.name,
-            "x-dead-letter-routing-key": "conversa.my-entity.dlq",
+            "x-dead-letter-routing-key": "SchemaComposition.schema-composition.dlq",
         },
     ),
     # Domain queue for FormCatalogCategory events
     Queue(
-        "conversa.form-catalog-category",
+        "SchemaComposition.form-catalog-category",
         exchange=conversa_exchange,
-        routing_key="conversa.form-catalog-category.#",
+        routing_key="SchemaComposition.form-catalog-category.#",
         queue_arguments={
             "x-dead-letter-exchange": conversa_dlx.name,
-            "x-dead-letter-routing-key": "conversa.form-catalog-category.dlq",
+            "x-dead-letter-routing-key": "SchemaComposition.form-catalog-category.dlq",
         },
     ),
     # Domain queue for FieldDef events
     Queue(
-        "conversa.field-def",
+        "SchemaComposition.field-def",
         exchange=conversa_exchange,
-        routing_key="conversa.field-def.#",
+        routing_key="SchemaComposition.field-def.#",
         queue_arguments={
             "x-dead-letter-exchange": conversa_dlx.name,
-            "x-dead-letter-routing-key": "conversa.field-def.dlq",
+            "x-dead-letter-routing-key": "SchemaComposition.field-def.dlq",
         },
     ),
     # Domain queue for FieldDefOption events
     Queue(
-        "conversa.field-def-option",
+        "SchemaComposition.field-def-option",
         exchange=conversa_exchange,
-        routing_key="conversa.field-def-option.#",
+        routing_key="SchemaComposition.field-def-option.#",
         queue_arguments={
             "x-dead-letter-exchange": conversa_dlx.name,
-            "x-dead-letter-routing-key": "conversa.field-def-option.dlq",
+            "x-dead-letter-routing-key": "SchemaComposition.field-def-option.dlq",
         },
     ),
 
     # Domain queue for Component events
     Queue(
-        "conversa.component",
+        "SchemaComposition.component",
         exchange=conversa_exchange,
-        routing_key="conversa.component.#",
+        routing_key="SchemaComposition.component.#",
         queue_arguments={
             "x-dead-letter-exchange": conversa_dlx.name,
-            "x-dead-letter-routing-key": "conversa.component.dlq",
+            "x-dead-letter-routing-key": "SchemaComposition.component.dlq",
         },
     ),
     # Domain queue for ComponentPanel events
     Queue(
-        "conversa.component-panel",
+        "SchemaComposition.component-panel",
         exchange=conversa_exchange,
-        routing_key="conversa.component-panel.#",
+        routing_key="SchemaComposition.component-panel.#",
         queue_arguments={
             "x-dead-letter-exchange": conversa_dlx.name,
-            "x-dead-letter-routing-key": "conversa.component-panel.dlq",
+            "x-dead-letter-routing-key": "SchemaComposition.component-panel.dlq",
         },
     ),
     # Domain queue for ComponentPanelField events
     Queue(
-        "conversa.component-panel-field",
+        "SchemaComposition.component-panel-field",
         exchange=conversa_exchange,
-        routing_key="conversa.component-panel-field.#",
+        routing_key="SchemaComposition.component-panel-field.#",
         queue_arguments={
             "x-dead-letter-exchange": conversa_dlx.name,
-            "x-dead-letter-routing-key": "conversa.component-panel-field.dlq",
+            "x-dead-letter-routing-key": "SchemaComposition.component-panel-field.dlq",
         },
     ),
     # Domain queue for Form events
     Queue(
-        "conversa.form",
+        "SchemaComposition.form",
         exchange=conversa_exchange,
-        routing_key="conversa.form.#",
+        routing_key="SchemaComposition.form.#",
         queue_arguments={
             "x-dead-letter-exchange": conversa_dlx.name,
-            "x-dead-letter-routing-key": "conversa.form.dlq",
+            "x-dead-letter-routing-key": "SchemaComposition.form.dlq",
         },
     ),
     # Domain queue for FormPanel events
     Queue(
-        "conversa.form-panel",
+        "SchemaComposition.form-panel",
         exchange=conversa_exchange,
-        routing_key="conversa.form-panel.#",
+        routing_key="SchemaComposition.form-panel.#",
         queue_arguments={
             "x-dead-letter-exchange": conversa_dlx.name,
-            "x-dead-letter-routing-key": "conversa.form-panel.dlq",
+            "x-dead-letter-routing-key": "SchemaComposition.form-panel.dlq",
         },
     ),
     # Domain queue for FormPanelComponent events
     Queue(
-        "conversa.form-panel-component",
+        "SchemaComposition.form-panel-component",
         exchange=conversa_exchange,
-        routing_key="conversa.form-panel-component.#",
+        routing_key="SchemaComposition.form-panel-component.#",
         queue_arguments={
             "x-dead-letter-exchange": conversa_dlx.name,
-            "x-dead-letter-routing-key": "conversa.form-panel-component.dlq",
+            "x-dead-letter-routing-key": "SchemaComposition.form-panel-component.dlq",
         },
     ),
     # Domain queue for FormPanelField events
     Queue(
-        "conversa.form-panel-field",
+        "SchemaComposition.form-panel-field",
         exchange=conversa_exchange,
-        routing_key="conversa.form-panel-field.#",
+        routing_key="SchemaComposition.form-panel-field.#",
         queue_arguments={
             "x-dead-letter-exchange": conversa_dlx.name,
-            "x-dead-letter-routing-key": "conversa.form-panel-field.dlq",
+            "x-dead-letter-routing-key": "SchemaComposition.form-panel-field.dlq",
         },
     ),
     # Domain queue for FormSubmission events
     Queue(
-        "conversa.form-submission",
+        "SchemaComposition.form-submission",
         exchange=conversa_exchange,
-        routing_key="conversa.form-submission.#",
+        routing_key="SchemaComposition.form-submission.#",
         queue_arguments={
             "x-dead-letter-exchange": conversa_dlx.name,
-            "x-dead-letter-routing-key": "conversa.form-submission.dlq",
+            "x-dead-letter-routing-key": "SchemaComposition.form-submission.dlq",
         },
     ),
     # Domain queue for FormSubmissionValue events
     Queue(
-        "conversa.form-submission-value",
+        "SchemaComposition.form-submission-value",
         exchange=conversa_exchange,
-        routing_key="conversa.form-submission-value.#",
+        routing_key="SchemaComposition.form-submission-value.#",
         queue_arguments={
             "x-dead-letter-exchange": conversa_dlx.name,
-            "x-dead-letter-routing-key": "conversa.form-submission-value.dlq",
+            "x-dead-letter-routing-key": "SchemaComposition.form-submission-value.dlq",
         },
     ),
 )
 
 celery_app.conf.task_queues += (
-    # Dead letter queue for MyEntity events
+    # Dead letter queue for SchemaComposition events
     Queue(
-        "conversa.my-entity.dlq",
+        "SchemaComposition.schema-composition.dlq",
         exchange=conversa_dlx,
-        routing_key="conversa.my-entity.dlq",
+        routing_key="SchemaComposition.schema-composition.dlq",
     ),
     # Dead letter queue for FormCatalogCategory events
     Queue(
-        "conversa.form-catalog-category.dlq",
+        "SchemaComposition.form-catalog-category.dlq",
         exchange=conversa_dlx,
-        routing_key="conversa.form-catalog-category.dlq",
+        routing_key="SchemaComposition.form-catalog-category.dlq",
     ),
     # Dead letter queue for FieldDef events
     Queue(
-        "conversa.field-def.dlq",
+        "SchemaComposition.field-def.dlq",
         exchange=conversa_dlx,
-        routing_key="conversa.field-def.dlq",
+        routing_key="SchemaComposition.field-def.dlq",
     ),
     # Dead letter queue for FieldDefOption events
     Queue(
-        "conversa.field-def-option.dlq",
+        "SchemaComposition.field-def-option.dlq",
         exchange=conversa_dlx,
-        routing_key="conversa.field-def-option.dlq",
+        routing_key="SchemaComposition.field-def-option.dlq",
     ),
 
     # Dead letter queue for Component events
     Queue(
-        "conversa.component.dlq",
+        "SchemaComposition.component.dlq",
         exchange=conversa_dlx,
-        routing_key="conversa.component.dlq",
+        routing_key="SchemaComposition.component.dlq",
     ),
     # Dead letter queue for ComponentPanel events
     Queue(
-        "conversa.component-panel.dlq",
+        "SchemaComposition.component-panel.dlq",
         exchange=conversa_dlx,
-        routing_key="conversa.component-panel.dlq",
+        routing_key="SchemaComposition.component-panel.dlq",
     ),
     # Dead letter queue for ComponentPanelField events
     Queue(
-        "conversa.component-panel-field.dlq",
+        "SchemaComposition.component-panel-field.dlq",
         exchange=conversa_dlx,
-        routing_key="conversa.component-panel-field.dlq",
+        routing_key="SchemaComposition.component-panel-field.dlq",
     ),
     # Dead letter queue for Form events
     Queue(
-        "conversa.form.dlq",
+        "SchemaComposition.form.dlq",
         exchange=conversa_dlx,
-        routing_key="conversa.form.dlq",
+        routing_key="SchemaComposition.form.dlq",
     ),
     # Dead letter queue for FormPanel events
     Queue(
-        "conversa.form-panel.dlq",
+        "SchemaComposition.form-panel.dlq",
         exchange=conversa_dlx,
-        routing_key="conversa.form-panel.dlq",
+        routing_key="SchemaComposition.form-panel.dlq",
     ),
     # Dead letter queue for FormPanelComponent events
     Queue(
-        "conversa.form-panel-component.dlq",
+        "SchemaComposition.form-panel-component.dlq",
         exchange=conversa_dlx,
-        routing_key="conversa.form-panel-component.dlq",
+        routing_key="SchemaComposition.form-panel-component.dlq",
     ),
     # Dead letter queue for FormPanelField events
     Queue(
-        "conversa.form-panel-field.dlq",
+        "SchemaComposition.form-panel-field.dlq",
         exchange=conversa_dlx,
-        routing_key="conversa.form-panel-field.dlq",
+        routing_key="SchemaComposition.form-panel-field.dlq",
     ),
     # Dead letter queue for FormSubmission events
     Queue(
-        "conversa.form-submission.dlq",
+        "SchemaComposition.form-submission.dlq",
         exchange=conversa_dlx,
-        routing_key="conversa.form-submission.dlq",
+        routing_key="SchemaComposition.form-submission.dlq",
     ),
     # Dead letter queue for FormSubmissionValue events
     Queue(
-        "conversa.form-submission-value.dlq",
+        "SchemaComposition.form-submission-value.dlq",
         exchange=conversa_dlx,
-        routing_key="conversa.form-submission-value.dlq",
+        routing_key="SchemaComposition.form-submission-value.dlq",
     ),
 )
 
 celery_app.conf.task_routes = {
-    # Routes for MyEntity lifecycle events
-    "conversa.my-entity.created": {
-        "queue": "conversa.my-entity",
-        "routing_key": "conversa.my-entity.created",
+    # Routes for SchemaComposition lifecycle events
+    "SchemaComposition.schema-composition.created": {
+        "queue": "SchemaComposition.schema-composition",
+        "routing_key": "SchemaComposition.schema-composition.created",
     },
-    "conversa.my-entity.updated": {
-        "queue": "conversa.my-entity",
-        "routing_key": "conversa.my-entity.updated",
+    "SchemaComposition.schema-composition.updated": {
+        "queue": "SchemaComposition.schema-composition",
+        "routing_key": "SchemaComposition.schema-composition.updated",
     },
-    "conversa.my-entity.deleted": {
-        "queue": "conversa.my-entity",
-        "routing_key": "conversa.my-entity.deleted",
+    "SchemaComposition.schema-composition.deleted": {
+        "queue": "SchemaComposition.schema-composition",
+        "routing_key": "SchemaComposition.schema-composition.deleted",
     },
 
     # Routes for FormCatalogCategory lifecycle events
-    "conversa.form-catalog-category.created": {
-        "queue": "conversa.form-catalog-category",
-        "routing_key": "conversa.form-catalog-category.created",
+    "SchemaComposition.form-catalog-category.created": {
+        "queue": "SchemaComposition.form-catalog-category",
+        "routing_key": "SchemaComposition.form-catalog-category.created",
     },
-    "conversa.form-catalog-category.updated": {
-        "queue": "conversa.form-catalog-category",
-        "routing_key": "conversa.form-catalog-category.updated",
+    "SchemaComposition.form-catalog-category.updated": {
+        "queue": "SchemaComposition.form-catalog-category",
+        "routing_key": "SchemaComposition.form-catalog-category.updated",
     },
-    "conversa.form-catalog-category.deleted": {
-        "queue": "conversa.form-catalog-category",
-        "routing_key": "conversa.form-catalog-category.deleted",
+    "SchemaComposition.form-catalog-category.deleted": {
+        "queue": "SchemaComposition.form-catalog-category",
+        "routing_key": "SchemaComposition.form-catalog-category.deleted",
     },
 
     # Routes for FieldDef lifecycle events
-    "conversa.field-def.created": {
-        "queue": "conversa.field-def",
-        "routing_key": "conversa.field-def.created",
+    "SchemaComposition.field-def.created": {
+        "queue": "SchemaComposition.field-def",
+        "routing_key": "SchemaComposition.field-def.created",
     },
-    "conversa.field-def.updated": {
-        "queue": "conversa.field-def",
-        "routing_key": "conversa.field-def.updated",
+    "SchemaComposition.field-def.updated": {
+        "queue": "SchemaComposition.field-def",
+        "routing_key": "SchemaComposition.field-def.updated",
     },
-    "conversa.field-def.deleted": {
-        "queue": "conversa.field-def",
-        "routing_key": "conversa.field-def.deleted",
+    "SchemaComposition.field-def.deleted": {
+        "queue": "SchemaComposition.field-def",
+        "routing_key": "SchemaComposition.field-def.deleted",
     },
 
     # Routes for FieldDefOption lifecycle events
-    "conversa.field-def-option.created": {
-        "queue": "conversa.field-def-option",
-        "routing_key": "conversa.field-def-option.created",
+    "SchemaComposition.field-def-option.created": {
+        "queue": "SchemaComposition.field-def-option",
+        "routing_key": "SchemaComposition.field-def-option.created",
     },
-    "conversa.field-def-option.updated": {
-        "queue": "conversa.field-def-option",
-        "routing_key": "conversa.field-def-option.updated",
+    "SchemaComposition.field-def-option.updated": {
+        "queue": "SchemaComposition.field-def-option",
+        "routing_key": "SchemaComposition.field-def-option.updated",
     },
-    "conversa.field-def-option.deleted": {
-        "queue": "conversa.field-def-option",
-        "routing_key": "conversa.field-def-option.deleted",
+    "SchemaComposition.field-def-option.deleted": {
+        "queue": "SchemaComposition.field-def-option",
+        "routing_key": "SchemaComposition.field-def-option.deleted",
     },
 
     # Routes for Component lifecycle events
-    "conversa.component.created": {
-        "queue": "conversa.component",
-        "routing_key": "conversa.component.created",
+    "SchemaComposition.component.created": {
+        "queue": "SchemaComposition.component",
+        "routing_key": "SchemaComposition.component.created",
     },
-    "conversa.component.updated": {
-        "queue": "conversa.component",
-        "routing_key": "conversa.component.updated",
+    "SchemaComposition.component.updated": {
+        "queue": "SchemaComposition.component",
+        "routing_key": "SchemaComposition.component.updated",
     },
-    "conversa.component.deleted": {
-        "queue": "conversa.component",
-        "routing_key": "conversa.component.deleted",
+    "SchemaComposition.component.deleted": {
+        "queue": "SchemaComposition.component",
+        "routing_key": "SchemaComposition.component.deleted",
     },
 
     # Routes for ComponentPanel lifecycle events
-    "conversa.component-panel.created": {
-        "queue": "conversa.component-panel",
-        "routing_key": "conversa.component-panel.created",
+    "SchemaComposition.component-panel.created": {
+        "queue": "SchemaComposition.component-panel",
+        "routing_key": "SchemaComposition.component-panel.created",
     },
-    "conversa.component-panel.updated": {
-        "queue": "conversa.component-panel",
-        "routing_key": "conversa.component-panel.updated",
+    "SchemaComposition.component-panel.updated": {
+        "queue": "SchemaComposition.component-panel",
+        "routing_key": "SchemaComposition.component-panel.updated",
     },
-    "conversa.component-panel.deleted": {
-        "queue": "conversa.component-panel",
-        "routing_key": "conversa.component-panel.deleted",
+    "SchemaComposition.component-panel.deleted": {
+        "queue": "SchemaComposition.component-panel",
+        "routing_key": "SchemaComposition.component-panel.deleted",
     },
 
     # Routes for ComponentPanelField lifecycle events
-    "conversa.component-panel-field.created": {
-        "queue": "conversa.component-panel-field",
-        "routing_key": "conversa.component-panel-field.created",
+    "SchemaComposition.component-panel-field.created": {
+        "queue": "SchemaComposition.component-panel-field",
+        "routing_key": "SchemaComposition.component-panel-field.created",
     },
-    "conversa.component-panel-field.updated": {
-        "queue": "conversa.component-panel-field",
-        "routing_key": "conversa.component-panel-field.updated",
+    "SchemaComposition.component-panel-field.updated": {
+        "queue": "SchemaComposition.component-panel-field",
+        "routing_key": "SchemaComposition.component-panel-field.updated",
     },
-    "conversa.component-panel-field.deleted": {
-        "queue": "conversa.component-panel-field",
-        "routing_key": "conversa.component-panel-field.deleted",
+    "SchemaComposition.component-panel-field.deleted": {
+        "queue": "SchemaComposition.component-panel-field",
+        "routing_key": "SchemaComposition.component-panel-field.deleted",
     },
 
     # Routes for Form lifecycle events
-    "conversa.form.created": {
-        "queue": "conversa.form",
-        "routing_key": "conversa.form.created",
+    "SchemaComposition.form.created": {
+        "queue": "SchemaComposition.form",
+        "routing_key": "SchemaComposition.form.created",
     },
-    "conversa.form.updated": {
-        "queue": "conversa.form",
-        "routing_key": "conversa.form.updated",
+    "SchemaComposition.form.updated": {
+        "queue": "SchemaComposition.form",
+        "routing_key": "SchemaComposition.form.updated",
     },
-    "conversa.form.deleted": {
-        "queue": "conversa.form",
-        "routing_key": "conversa.form.deleted",
+    "SchemaComposition.form.deleted": {
+        "queue": "SchemaComposition.form",
+        "routing_key": "SchemaComposition.form.deleted",
     },
 
     # Routes for FormPanel lifecycle events
-    "conversa.form-panel.created": {
-        "queue": "conversa.form-panel",
-        "routing_key": "conversa.form-panel.created",
+    "SchemaComposition.form-panel.created": {
+        "queue": "SchemaComposition.form-panel",
+        "routing_key": "SchemaComposition.form-panel.created",
     },
-    "conversa.form-panel.updated": {
-        "queue": "conversa.form-panel",
-        "routing_key": "conversa.form-panel.updated",
+    "SchemaComposition.form-panel.updated": {
+        "queue": "SchemaComposition.form-panel",
+        "routing_key": "SchemaComposition.form-panel.updated",
     },
-    "conversa.form-panel.deleted": {
-        "queue": "conversa.form-panel",
-        "routing_key": "conversa.form-panel.deleted",
+    "SchemaComposition.form-panel.deleted": {
+        "queue": "SchemaComposition.form-panel",
+        "routing_key": "SchemaComposition.form-panel.deleted",
     },
 
     # Routes for FormPanelComponent lifecycle events
-    "conversa.form-panel-component.created": {
-        "queue": "conversa.form-panel-component",
-        "routing_key": "conversa.form-panel-component.created",
+    "SchemaComposition.form-panel-component.created": {
+        "queue": "SchemaComposition.form-panel-component",
+        "routing_key": "SchemaComposition.form-panel-component.created",
     },
-    "conversa.form-panel-component.updated": {
-        "queue": "conversa.form-panel-component",
-        "routing_key": "conversa.form-panel-component.updated",
+    "SchemaComposition.form-panel-component.updated": {
+        "queue": "SchemaComposition.form-panel-component",
+        "routing_key": "SchemaComposition.form-panel-component.updated",
     },
-    "conversa.form-panel-component.deleted": {
-        "queue": "conversa.form-panel-component",
-        "routing_key": "conversa.form-panel-component.deleted",
+    "SchemaComposition.form-panel-component.deleted": {
+        "queue": "SchemaComposition.form-panel-component",
+        "routing_key": "SchemaComposition.form-panel-component.deleted",
     },
 
     # Routes for FormPanelField lifecycle events
-    "conversa.form-panel-field.created": {
-        "queue": "conversa.form-panel-field",
-        "routing_key": "conversa.form-panel-field.created",
+    "SchemaComposition.form-panel-field.created": {
+        "queue": "SchemaComposition.form-panel-field",
+        "routing_key": "SchemaComposition.form-panel-field.created",
     },
-    "conversa.form-panel-field.updated": {
-        "queue": "conversa.form-panel-field",
-        "routing_key": "conversa.form-panel-field.updated",
+    "SchemaComposition.form-panel-field.updated": {
+        "queue": "SchemaComposition.form-panel-field",
+        "routing_key": "SchemaComposition.form-panel-field.updated",
     },
-    "conversa.form-panel-field.deleted": {
-        "queue": "conversa.form-panel-field",
-        "routing_key": "conversa.form-panel-field.deleted",
+    "SchemaComposition.form-panel-field.deleted": {
+        "queue": "SchemaComposition.form-panel-field",
+        "routing_key": "SchemaComposition.form-panel-field.deleted",
     },
 
     # Routes for FormSubmission lifecycle events
-    "conversa.form-submission.created": {
-        "queue": "conversa.form-submission",
-        "routing_key": "conversa.form-submission.created",
+    "SchemaComposition.form-submission.created": {
+        "queue": "SchemaComposition.form-submission",
+        "routing_key": "SchemaComposition.form-submission.created",
     },
-    "conversa.form-submission.updated": {
-        "queue": "conversa.form-submission",
-        "routing_key": "conversa.form-submission.updated",
+    "SchemaComposition.form-submission.updated": {
+        "queue": "SchemaComposition.form-submission",
+        "routing_key": "SchemaComposition.form-submission.updated",
     },
-    "conversa.form-submission.deleted": {
-        "queue": "conversa.form-submission",
-        "routing_key": "conversa.form-submission.deleted",
+    "SchemaComposition.form-submission.deleted": {
+        "queue": "SchemaComposition.form-submission",
+        "routing_key": "SchemaComposition.form-submission.deleted",
     },
 
     # Routes for FormSubmissionValue lifecycle events
-    "conversa.form-submission-value.created": {
-        "queue": "conversa.form-submission-value",
-        "routing_key": "conversa.form-submission-value.created",
+    "SchemaComposition.form-submission-value.created": {
+        "queue": "SchemaComposition.form-submission-value",
+        "routing_key": "SchemaComposition.form-submission-value.created",
     },
-    "conversa.form-submission-value.updated": {
-        "queue": "conversa.form-submission-value",
-        "routing_key": "conversa.form-submission-value.updated",
+    "SchemaComposition.form-submission-value.updated": {
+        "queue": "SchemaComposition.form-submission-value",
+        "routing_key": "SchemaComposition.form-submission-value.updated",
     },
-    "conversa.form-submission-value.deleted": {
-        "queue": "conversa.form-submission-value",
-        "routing_key": "conversa.form-submission-value.deleted",
+    "SchemaComposition.form-submission-value.deleted": {
+        "queue": "SchemaComposition.form-submission-value",
+        "routing_key": "SchemaComposition.form-submission-value.deleted",
     },
 }
 
@@ -470,7 +470,7 @@ celery_app.autodiscover_tasks(
 # instrumentation libraries are unavailable this silently does
 # nothing.
 try:
-    init_tracing(service_name="my-entity-worker")
+    init_tracing(service_name="schema-composition-worker")
     instrument_celery(celery_app)
     # Instrument httpx globally for Celery worker processes.
     from app.core.telemetry import instrument_httpx

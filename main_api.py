@@ -1,9 +1,9 @@
 """
-Entry point for the MyEntity Service API.
+Entry point for the SchemaComposition Service API.
 
 This module wires together the FastAPI application, telemetry
 instrumentation and Liquibase migrations.  Only the health and
-MyEntity routes are mounted here.  When adding additional domains
+SchemaComposition routes are mounted here.  When adding additional domains
 to your service, follow the pattern used here by importing the
 router from your new ``app.api.routes.<your_domain>`` module and
 including it on the FastAPI app via ``app.include_router(...)``.
@@ -22,7 +22,7 @@ from app.core.telemetry import init_tracing, instrument_fastapi, instrument_http
 from app.api.error_handlers import add_exception_handlers
 from app.util.liquibase import apply_changelog
 from app.api.routes.health import router as health_router
-from app.api.routes.my_entity import router as my_entity_router
+
 from app.api.routes.form_catalog_category import (
     router as form_catalog_category_router,
 )  # type: ignore
@@ -54,7 +54,7 @@ from app.api.routes.form_submission_value import (
 # messages emitted during module import are formatted consistently and
 # include trace context if available.
 logger = configure_logging()
-init_tracing(service_name="my-entity-service.api")
+init_tracing(service_name="schema-composition-service.api")
 
 
 @asynccontextmanager
@@ -68,7 +68,7 @@ async def lifespan(app: FastAPI):
     stopping.  Extend this function to perform additional startup or
     teardown tasks as needed.
     """
-    logger.info("startup_event: MyEntity Service is starting")
+    logger.info("startup_event: SchemaComposition Service is starting")
     if Config.liquibase_enabled():
         try:
             apply_changelog(Config.liquibase_property_file())
@@ -79,12 +79,12 @@ async def lifespan(app: FastAPI):
     else:
         logger.info("Skipping Liquibase schema validation and update")
     yield
-    logger.info("shutdown_event: MyEntity Service is shutting down")
+    logger.info("shutdown_event: SchemaComposition Service is shutting down")
 
 
 # Create the FastAPI application and configure OpenAPI metadata.  When
 # adding new domains adjust the service name and version appropriately.
-app = FastAPI(lifespan=lifespan, title="MyEntity Service", version="0.1.0")
+app = FastAPI(lifespan=lifespan, title="SchemaComposition Service", version="0.1.0")
 
 # Instrument FastAPI and httpx for distributed tracing.  If
 # OpenTelemetry is not installed these calls are no‑ops.
@@ -111,7 +111,6 @@ async def log_requests(request: Request, call_next):
 # (endpoints) for a single resource.  When adding new domains import
 # your router here and include it on the app.
 app.include_router(health_router)
-app.include_router(my_entity_router)
 app.include_router(form_catalog_category_router)
 app.include_router(field_def_router)
 app.include_router(field_def_option_router)

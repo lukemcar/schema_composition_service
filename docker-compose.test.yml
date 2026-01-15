@@ -3,7 +3,7 @@ version: "3.8"
 services:
   db:
     image: postgres:15-alpine
-    container_name: my_entity_db
+    container_name: schema_composition_test_db
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres

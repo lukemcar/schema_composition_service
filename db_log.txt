@@ -1,0 +1,12 @@
+Container schema_composition_db  Running
+Attaching to schema_composition_db, schema_composition_jaeger, schema_composition_otel_collector, schema_composition_rabbitmq, schema_composition_service_app, schema_composition_worker
+schema_composition_service_app     | 1 changesets have not been applied to supabase_admin@jdbc:postgresql://db:5432/schema_composition_db
+schema_composition_service_app     | -- Against: supabase_admin@jdbc:postgresql://db:5432/schema_composition_db
+schema_composition_db              | 172.30.0.7 2026-01-15 03:48:21.669 UTC [7821] supabase_admin@schema_composition_db ERROR:  function schema_composition.tg_set_form_submission_value_search_text() does not exist
+schema_composition_db              | 172.30.0.7 2026-01-15 03:48:21.669 UTC [7821] supabase_admin@schema_composition_db STATEMENT:  
+schema_composition_db              | 	
+schema_composition_db              | 	CREATE TRIGGER trg_form_submission_value_set_search_text
+schema_composition_db              | 	BEFORE INSERT OR UPDATE OF value
+schema_composition_db              | 	ON schema_composition.form_submission_value
+schema_composition_db              | 	FOR EACH ROW
+schema_composition_db              | 	EXECUTE FUNCTION schema_composition.tg_set_form_submission_value_search_text()

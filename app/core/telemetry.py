@@ -1,5 +1,5 @@
 """
-OpenTelemetry instrumentation for Dyno Conversa.
+OpenTelemetry instrumentation for SchemaComposition.
 
 This module configures distributed tracing for both the FastAPI
 application and Celery background workers.  When instrumentation

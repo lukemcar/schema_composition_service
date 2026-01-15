@@ -1,34 +1,47 @@
--- Create the main database for the MyEntity service
-CREATE DATABASE my_entity_service;
+SET search_path TO public, schema_composition;
 
-\c my_entity_service;
+-- Create the main database for the SchemaComposition service
+CREATE DATABASE schema_composition_db;
+
+\c schema_composition_db;
+
+-- ==============================================
+-- Enable extensions
+-- ==============================================
+
+CREATE EXTENSION IF NOT EXISTS pg_jsonschema;
 
 
 -- API user (FastAPI service)
-CREATE USER my_entity_app WITH PASSWORD 'my_entity_app_password';
+CREATE USER schema_composition_app WITH PASSWORD 'schema_composition_app_password';
 
 -- Admin user (Liquibase + DB migrations)
-CREATE USER my_entity_admin WITH PASSWORD 'my_entity_admin_password';
+CREATE USER schema_composition_admin WITH PASSWORD 'schema_composition_admin_password';
 
 -- Worker user (Celery or async background jobs)
-CREATE USER my_entity_worker WITH PASSWORD 'my_entity_worker_password';
+CREATE USER schema_composition_worker WITH PASSWORD 'schema_composition_worker_password';
 
-CREATE SCHEMA IF NOT EXISTS public AUTHORIZATION my_entity_admin;
+CREATE SCHEMA IF NOT EXISTS schema_composition AUTHORIZATION schema_composition_admin;
 
 
-GRANT ALL PRIVILEGES ON DATABASE my_entity_service TO my_entity_admin;
-GRANT ALL PRIVILEGES ON SCHEMA public TO my_entity_admin;
+GRANT ALL PRIVILEGES ON DATABASE schema_composition_db TO schema_composition_admin;
+GRANT ALL PRIVILEGES ON SCHEMA schema_composition TO schema_composition_admin;
 
-GRANT USAGE, CREATE ON SCHEMA public TO my_entity_app;
-ALTER DEFAULT PRIVILEGES IN SCHEMA public
-  GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO my_entity_app;
-ALTER DEFAULT PRIVILEGES IN SCHEMA public
-  GRANT USAGE ON SEQUENCES TO my_entity_app;
+GRANT USAGE, CREATE ON SCHEMA schema_composition TO schema_composition_app;
+ALTER DEFAULT PRIVILEGES IN SCHEMA schema_composition
+  GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO schema_composition_app;
+ALTER DEFAULT PRIVILEGES IN SCHEMA schema_composition
+  GRANT USAGE ON SEQUENCES TO schema_composition_app;
 
-GRANT USAGE ON SCHEMA public TO my_entity_worker;
-ALTER DEFAULT PRIVILEGES IN SCHEMA public
-  GRANT SELECT, INSERT, UPDATE ON TABLES TO my_entity_worker;
-ALTER DEFAULT PRIVILEGES IN SCHEMA public
-  GRANT USAGE ON SEQUENCES TO my_entity_worker;
+GRANT USAGE ON SCHEMA schema_composition TO schema_composition_worker;
+ALTER DEFAULT PRIVILEGES IN SCHEMA schema_composition
+  GRANT SELECT, INSERT, UPDATE ON TABLES TO schema_composition_worker;
+ALTER DEFAULT PRIVILEGES IN SCHEMA schema_composition
+  GRANT USAGE ON SEQUENCES TO schema_composition_worker;
+
+GRANT USAGE ON SCHEMA public TO schema_composition_admin;
+GRANT USAGE ON SCHEMA public TO schema_composition_app;
+GRANT USAGE ON SCHEMA public TO schema_composition_worker;
+
 
 -- =========

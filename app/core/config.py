@@ -12,12 +12,12 @@ class Config:
     def database_url() -> str:
         """Return the SQLAlchemy database URL.
 
-        Defaults to a local Postgres instance named ``my_entity_service``.  You
+        Defaults to a local Postgres instance named ``schema_composition_db``.  You
         can override this via the ``DATABASE_URL`` environment variable.
         """
         return os.getenv(
             "DATABASE_URL",
-            "postgresql+psycopg2://postgres:postgres@localhost:5432/my_entity_service",
+            "postgresql+psycopg2://postgres:postgres@localhost:5432/schema_composition_db",
         )
 
     @staticmethod
@@ -55,12 +55,12 @@ class Config:
         """Return the Celery broker URL.
 
         By default connects to a local RabbitMQ instance using the
-        ``my_entity`` user and vhost.  Override via the ``CELERY_BROKER_URL``
+        ``schema_composition`` user and vhost.  Override via the ``CELERY_BROKER_URL``
         environment variable if needed.
         """
         return os.getenv(
             "CELERY_BROKER_URL",
-            "amqp://my_entity:my_entity@localhost:5672/my_entity",
+            "amqp://schema_composition:schema_composition@localhost:5672/schema_composition",
         )
     
     @staticmethod

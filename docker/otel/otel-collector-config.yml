@@ -12,10 +12,10 @@ processors:
 exporters:
   otlp:
     # Export spans to the Jaeger all-in-one service via OTLP gRPC.
-    # Jaeger’s OTLP receiver must be enabled in docker-compose (COLLECTOR_OTLP_ENABLED=true).
+    # Jaeger's OTLP receiver must be enabled in docker-compose (COLLECTOR_OTLP_ENABLED=true).
     endpoint: jaeger:4317
     tls:
-      # Jaeger’s OTLP receiver does not expose TLS by default; disable certificate verification.
+      # Jaeger's OTLP receiver does not expose TLS by default; disable certificate verification.
       insecure: true
 
 service:

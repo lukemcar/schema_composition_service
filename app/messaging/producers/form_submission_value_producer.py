@@ -45,7 +45,7 @@ class FormSubmissionValueProducer:
         )
         envelope = EventEnvelope.create(message.model_dump(mode="json"), FormSubmissionValueCreatedMessage)
         celery_app.send_task(
-            "conversa.form-submission-value.created",
+            "SchemaComposition.form-submission-value.created",
             args=[envelope.model_dump(mode="json")],
             headers=FormSubmissionValueProducer._build_headers(),
         )
@@ -70,7 +70,7 @@ class FormSubmissionValueProducer:
         )
         envelope = EventEnvelope.create(message.model_dump(mode="json"), FormSubmissionValueUpdatedMessage)
         celery_app.send_task(
-            "conversa.form-submission-value.updated",
+            "SchemaComposition.form-submission-value.updated",
             args=[envelope.model_dump(mode="json")],
             headers=FormSubmissionValueProducer._build_headers(),
         )
@@ -91,7 +91,7 @@ class FormSubmissionValueProducer:
         )
         envelope = EventEnvelope.create(message.model_dump(mode="json"), FormSubmissionValueDeletedMessage)
         celery_app.send_task(
-            "conversa.form-submission-value.deleted",
+            "SchemaComposition.form-submission-value.deleted",
             args=[envelope.model_dump(mode="json")],
             headers=FormSubmissionValueProducer._build_headers(),
         )

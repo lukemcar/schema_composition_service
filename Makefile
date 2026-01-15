@@ -12,7 +12,7 @@ PYTEST       := $(PYTHON) -m pytest
 PIP_FLAGS    := -e . -qq
 PYTEST_FLAGS := -q
 
-ZIP_NAME     := my_entity_service_python.zip
+ZIP_NAME     := schema_composition_service_python.zip
 
 
 # ---------------------------------------------------------------------
@@ -30,7 +30,7 @@ install-dev:
 
 compile: install
 	@echo ">>> Compiling all python source files..."
-	@$(PYTHON) -m compileall .
+	@$(PYTHON) -m compileall . -q
 
 
 

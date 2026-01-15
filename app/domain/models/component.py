@@ -20,6 +20,10 @@ class Component(Base):
     """Database model for Components."""
 
     __tablename__ = "component"
+    
+    __table_args__ = (
+        {"schema": "schema_composition"},
+    )
 
     # Primary key
     component_id: uuid.UUID = Column(

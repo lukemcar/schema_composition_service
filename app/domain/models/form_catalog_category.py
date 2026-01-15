@@ -40,6 +40,10 @@ class FormCatalogCategory(Base):
     """
 
     __tablename__ = "form_catalog_category"
+    
+    __table_args__ = (
+        {"schema": "schema_composition"},
+    )
 
     # Map primary key to the ``id`` column defined in the DDL.  Use a
     # domain‑specific attribute name for clarity in Python code.

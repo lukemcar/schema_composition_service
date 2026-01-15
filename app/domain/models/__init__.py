@@ -7,7 +7,6 @@ imported.  When adding new domain models you must import them here.
 """
 
 from .base import Base  # noqa: F401
-from .my_entity import MyEntity  # noqa: F401
 from .form_catalog_category import FormCatalogCategory  # noqa: F401
 from .field_def import FieldDef  # noqa: F401
 from .field_def_option import FieldDefOption  # noqa: F401
@@ -24,7 +23,6 @@ from .enums import FieldDataType, FieldElementType, ArtifactSourceType  # noqa: 
 
 __all__ = [
     "Base",
-    "MyEntity",
     "FormCatalogCategory",
     "FieldDef",
     "FieldDefOption",

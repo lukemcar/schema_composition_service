@@ -47,7 +47,7 @@ class FieldDefOptionProducer:
         )
         envelope = EventEnvelope.create(message.model_dump(mode="json"), FieldDefOptionCreatedMessage)
         celery_app.send_task(
-            "conversa.field-def-option.created",
+            "SchemaComposition.field-def-option.created",
             args=[envelope.model_dump(mode="json")],
             headers=FieldDefOptionProducer._build_headers(),
         )
@@ -66,7 +66,7 @@ class FieldDefOptionProducer:
         )
         envelope = EventEnvelope.create(message.model_dump(mode="json"), FieldDefOptionUpdatedMessage)
         celery_app.send_task(
-            "conversa.field-def-option.updated",
+            "SchemaComposition.field-def-option.updated",
             args=[envelope.model_dump(mode="json")],
             headers=FieldDefOptionProducer._build_headers(),
         )
@@ -83,7 +83,7 @@ class FieldDefOptionProducer:
         )
         envelope = EventEnvelope.create(message.model_dump(mode="json"), FieldDefOptionDeletedMessage)
         celery_app.send_task(
-            "conversa.field-def-option.deleted",
+            "SchemaComposition.field-def-option.deleted",
             args=[envelope.model_dump(mode="json")],
             headers=FieldDefOptionProducer._build_headers(),
         )

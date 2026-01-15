@@ -5,7 +5,7 @@ This module implements the core business logic for creating,
 retrieving, listing, updating and deleting FormCatalogCategory
 records.  All database access is tenant-scoped: callers must
 provide the tenant identifier explicitly.  When adding new domain
-services follow the patterns used here and in ``my_entity_service``:
+services follow the patterns used here and in ``schema_composition_service``:
 parameterise the tenant ID, perform simple query/update operations
 using SQLAlchemy and raise appropriate HTTP exceptions when records
 are not found or operations fail.  Events are published via the
