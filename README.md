@@ -239,9 +239,3 @@ New domain concepts can be added by following the existing pattern:
 5. Implement service functions under `domain/services` that use the repository and publish events via `app.messaging.producers`.
 6. Add API routes under `app/api/routes` that depend on the service functions.
 7. Add a Liquibase change file under `liquibase/changelog` and include it in `changelog-root.xml`.
-
-## Contributing
-
-Contributions are welcome!  Please ensure that new code adheres to the existing structure and naming conventions.  Add unit and integration tests for new features, run `make test` before opening a pull request and update the changelog accordingly.
-
-This README reflects the current structure and behaviour of the **Schema Composition Service**.  For detailed API usage, consult the OpenAPI documentation served by the application at `/docs` once it is running.

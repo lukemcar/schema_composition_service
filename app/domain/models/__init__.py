@@ -19,6 +19,8 @@ from .form_panel_component import FormPanelComponent  # noqa: F401
 from .form_panel_field import FormPanelField  # noqa: F401
 from .form_submission import FormSubmission  # noqa: F401
 from .form_submission_value import FormSubmissionValue  # noqa: F401
+from .form_submission_archive import FormSubmissionArchive  # noqa: F401
+from .form_submission_value_archive import FormSubmissionValueArchive  # noqa: F401
 from .enums import FieldDataType, FieldElementType, ArtifactSourceType  # noqa: F401
 
 __all__ = [
@@ -38,4 +40,6 @@ __all__ = [
     "FieldDataType",
     "FieldElementType",
     "ArtifactSourceType",
+    "FormSubmissionArchive",
+    "FormSubmissionValueArchive",
 ]

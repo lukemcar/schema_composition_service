@@ -19,7 +19,7 @@ from datetime import datetime
 from typing import Optional
 from uuid import UUID
 
-from sqlalchemy import String, Integer, DateTime, Index, UniqueConstraint
+from sqlalchemy import String, Integer, DateTime, Index, UniqueConstraint, text
 from sqlalchemy.dialects.postgresql import UUID as pgUUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -40,6 +40,7 @@ class FieldDefOption(Base):  # type: ignore[type-arg]
         UniqueConstraint("tenant_id", "field_def_id", "option_key", name="uq_field_def_option_tenant_field_key"),
         UniqueConstraint("tenant_id", "field_def_id", "option_order", name="uq_field_def_option_tenant_field_order"),
         Index("ix_field_def_option_tenant_field_order", "tenant_id", "field_def_id", "option_order"),
+        Index("ix_field_def_option_label", "tenant_id", text("lower(option_label)")),
         {"schema": "schema_composition"},
     )
 
