@@ -16,6 +16,7 @@ from sqlalchemy import (
     ForeignKeyConstraint,
     JSON,
     Enum,
+    text,
 )
 from sqlalchemy.dialects.postgresql import UUID as pgUUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -53,6 +54,42 @@ class FieldDef(Base):  # type: ignore[type-arg]
         ),
         CheckConstraint("source_checksum IS NULL OR source_checksum ~ '^[0-9a-f]{64}$'", name="ck_field_def_source_checksum_format"),
         Index("ix_field_def_tenant_id", "tenant_id"),
+        # Added indexes from Liquibase DDL to ensure full coverage and tenant-safe filtering
+        Index("ix_field_def_tenant_field_key", "tenant_id", "field_key"),
+        Index(
+            "ix_field_def_tenant_category",
+            "tenant_id",
+            "category_id",
+            postgresql_where=text("category_id IS NOT NULL"),
+        ),
+        Index("ix_field_def_tenant_element_type", "tenant_id", "element_type"),
+        Index(
+            "ix_field_def_tenant_data_type",
+            "tenant_id",
+            "data_type",
+            postgresql_where=text("data_type IS NOT NULL"),
+        ),
+        # Expression indexes for case-insensitive label filtering
+        Index(
+            "ix_field_def_tenant_label",
+            "tenant_id",
+            text("lower(label)"),
+        ),
+        Index(
+            "ix_field_def_tenant_category_label",
+            "tenant_id",
+            "category_id",
+            text("lower(label)"),
+            postgresql_where=text("category_id IS NOT NULL"),
+        ),
+        Index("ix_field_def_tenant_source_type", "tenant_id", "source_type"),
+        Index(
+            "ix_field_def_tenant_source_keys",
+            "tenant_id",
+            "source_package_key",
+            "source_artifact_key",
+            "source_artifact_version",
+        ),
         {"schema": "schema_composition"},
     )
 

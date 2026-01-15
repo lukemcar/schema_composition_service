@@ -596,8 +596,6 @@ COMMENT ON COLUMN schema_composition.field_def.created_by IS
 COMMENT ON COLUMN schema_composition.field_def.updated_by IS
 'Optional actor identifier (username/service) that last updated the row.';
 
-----
-
 COMMENT ON COLUMN schema_composition.field_def.source_type IS
 'Identifies the origin of this artifact at creation or installation time. Distinguishes system-provided, provider-distributed, marketplace-installed, and tenant-created artifacts. Used for governance, builder palette filtering, upgrade and compatibility workflows, lifecycle management, and audit diagnostics. This value is intended to be immutable once set.';
 
